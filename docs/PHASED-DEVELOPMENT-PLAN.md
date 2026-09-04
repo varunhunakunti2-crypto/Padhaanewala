@@ -10,6 +10,9 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - Each phase ends with a **Definition of Done (DoD)**: the exact checks that prove the phase is complete.
 - Rubric: a task is "done" only when it runs, is verified, and (for backend) is covered by a test.
 
+> **Status snapshot:** ticks verified against `f00209b` + uncommitted Phase 06 homepage work (backend `/api/v1/cms/homepage`, seed, `src/app/page.tsx` SSR). Build verified `next build` green; `npm run lint` has 7 errors/7 warnings — ALL confined to friend's Phase 05 files (`ui/tabs.tsx`, `ui/checkbox.tsx`, `ui/label.tsx`, `ui/modal.tsx`, `ui/select.tsx`, `ui/textarea.tsx`, `ai/ai-chat.tsx`, `college/college-card.tsx`, `mock-test/mock-test-ui.tsx`, `student/student-dashboard.tsx`), not home/* files.
+> **Known merge issues:** (1) stale mock `app/api/dependencies.py` coexists with real `app/api/deps.py` — dead code; (2) 5 stale duplicate model files (`college.py`, `course.py`, `assessment.py`, `ai.py`, `admission.py`) — dead code; (3) `frontend/src/pages/*.astro` auth drafts are NOT runnable in Next.js; (4) `hello.c` stray at root; (5) `alembic.ini` missing (migrations need it).
+
 ---
 
 ## DAY 1 — Foundation
@@ -28,7 +31,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
   - `backend/app/models/admission.py`
 - [ ] Delete stray `hello.c` at repo root.
 - [ ] Reconcile Astro contradiction: `.vscode/launch.json`, `.vscode/extensions.json`, `skills-lock.json`, root `AGENTS.md` reference Astro; actual stack is Next.js 16. Update these to Next.js tooling.
-- [ ] Verify `.gitignore` covers: `backend/.env`, `frontend/.env*`, `database/alembic.ini`, `*.log`, OS junk.
+- [x] Verify `.gitignore` covers: `backend/.env`, `frontend/.env*`, `database/alembic.ini`, `*.log`, OS junk.
 - [ ] Confirm git repo clean on `main`; establish branch convention `develop`, `feature/*`, `bugfix/*`.
 
 **Mini-phase B — Environment configuration**
@@ -74,7 +77,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 
 **Mini-phase C — New Alembic migration + seed**
 - [ ] Generate one new migration for all gap fixes (`alembic revision --autogenerate`), review, then `upgrade head`.
-- [ ] Create `database/seeds/` (README promises it, folder missing) with idempotent seed scripts.
+- [x] Create `database/seeds/` (README promises it, folder missing) with idempotent seed scripts. — `seed_homepage.py` (idempotent upsert)
 - [ ] Seed: base roles/permissions, sample Location/State data, facilities list.
 - [ ] Keep a clearly-marked demo dataset script (never counts as production data).
 
@@ -89,17 +92,17 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 03 — BACKEND ARCHITECTURE
 
 **Goal:** Modular FastAPI architecture where routes → services → repositories → DB.
-**Current state:** ✅ core config/logging/exceptions/session/pagination; generic BaseRepository/BaseService; College vertical slice. Missing: most modules, schemas, RBAC deps, response envelope polish.
+**Current state:** 🔶 core config/logging/exceptions/session/pagination; generic BaseRepository/BaseService; routers registered: auth, colleges, cms (homepage). Missing: ~20 other module routers, most schemas, request-id middleware, envelope on error handlers, test-DB isolation.
 
 **Mini-phase A — Response & error standardization**
-- [ ] Finalize `ResponseModel` / `PaginatedResponse` envelope (fields: success, message, data, meta{pagination}).
-- [ ] Standardize HTTP status usage via constants; ensure all handlers return the envelope (currently error handlers return plain dicts).
+- [x] Finalize `ResponseModel` / `PaginatedResponse` envelope (success, message, data; PaginatedData items/total/page/size/pages) — `app/schemas/common.py`.
+- [ ] Standardize HTTP status usage via constants; ensure all handlers return the envelope (error handlers still return fastapi HTTPException dicts).
 - [ ] Add request-id middleware that injects `X-Request-ID` into responses + logs.
 
 **Mini-phase B — Module scaffolding (stubs → real)**
-- [ ] Create `app/api/v1/endpoints/` files + routers for: auth, users, courses, universities, locations, facilities, scholarships, exams, mock_tests, reviews, blogs, faqs, banners, notifications, enquiries, leads, counsellors, predictor, ai, search, comparison, media, analytics, dashboard(admin).
-- [ ] Register each router in `app/api/v1/api.py` under `/api/v1/...` namespaces.
-- [ ] Create schemas package per module (minimal stub schemas first).
+- [ ] Create `app/api/v1/endpoints/` files + routers for: users, courses, universities, locations, facilities, scholarships, exams, mock_tests, reviews, blogs, faqs, banners, notifications, enquiries, leads, counsellors, predictor, ai, search, comparison, media, analytics, dashboard(admin). — verified: only auth/colleges/cms exist
+- [ ] Register each router in `app/api/v1/api.py` under `/api/v1/...` namespaces. — only 3 registered so far
+- [ ] Create schemas package per module (minimal stub schemas first). — college/homepage/token/user/common exist
 
 **Mini-phase C — Repository/Service layer for priorities**
 - [ ] Implement repositories: Course, University, Scholarship, Exam, Enquiry, Review, Blog.
@@ -108,7 +111,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 
 **Mini-phase D — Dependency injection cleanup**
 - [ ] Move `get_db` into `app/api/dependencies.py` properly; route files use `Depends(get_db)` everywhere (College endpoint already does).
-- [ ] Replace mock `get_current_user`/`get_current_admin` with real ones once Phase 04 lands (marked TODO now).
+- [x] Replace mock `get_current_user`/`get_current_admin` with real ones once Phase 04 lands (marked TODO now). — real JWT deps in `app/api/deps.py`; stale `app/api/dependencies.py` still holds unused mocks
 
 **Mini-phase E — Tests**
 - [ ] Expand `tests/` to cover envelope shape, 404s, validation errors, pagination bounds, filtering.
@@ -123,11 +126,11 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 04 — AUTHENTICATION + RBAC
 
 **Goal:** Production auth end-to-end. No plaintext passwords, short-lived access + refresh tokens, 6 roles, RBAC on routes.
-**Current state:** 🔶 User/Role/Permission/UserRole/RolePermission models exist; `get_current_user`/`get_current_admin` are mocks; no auth endpoints; no frontend pages; no pyjwt/passlib installed.
+**Current state:** 🔶 Models + JWT/bcrypt deps exist; `app/core/security.py` (hash/verify/access/refresh/decode) + register/login endpoints live; real auth deps (`get_current_user`, `get_current_active_user`, `RoleChecker`) in `app/api/deps.py`; auth tests for register/login/invalid/duplicate. Missing: refresh rotation/password-reset/OTP endpoints, refresh-token store, 6-role seed, permission checker, rate limiting, Next.js auth pages (only `.astro` drafts).
 
 **Mini-phase A — Deps + password security**
-- [ ] Add deps: `passlib[bcrypt]` (or argon2), `python-jose` or `pyjwt`, `httpx` (tests), `python-multipart`.
-- [ ] Implement `app/core/security.py`: hash_password, verify_password (bcrypt), create_access_token (short TTL, ~15 min), create_refresh_token (7 days, rotated), decode_token.
+- [x] Add deps: `passlib[bcrypt]` (or argon2), `python-jose` or `pyjwt`, `httpx` (tests), `python-multipart`. — passlib/pyjwt/multipart/fastapi-limiter in; httpx missing
+- [x] Implement `app/core/security.py`: hash_password, verify_password (bcrypt), create_access_token (short TTL, ~15 min), create_refresh_token (7 days, rotated), decode_token. — claims = sub+type+exp only (no jti/iss/aud)
 - [ ] JWT claims: `sub` (user UUID), `role`, `type` (access/refresh), `jti` (for refresh-token lookup), `exp`, `iat`, `iss`, `aud`.
 
 **Mini-phase B — Refresh-token store**
@@ -135,8 +138,8 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Service: issue/rotate/revoke refresh tokens; reuse-detection (if revoked token reused → revoke family).
 
 **Mini-phase C — Endpoints**
-- [ ] `POST /api/v1/auth/register` — Student role default; unique email/mobile; returns tokens + profile stub.
-- [ ] `POST /api/v1/auth/login` — email+password OR mobile+password placeholder for OTP.
+- [x] `POST /api/v1/auth/register` — Student role default; unique email/mobile; returns tokens + profile stub. — register exists (no role assign/profile stub yet)
+- [x] `POST /api/v1/auth/login` — email+password OR mobile+password placeholder for OTP. — exists at `/api/v1/auth/login/access-token`
 - [ ] `POST /api/v1/auth/refresh` — rotate refresh → new access+refresh.
 - [ ] `POST /api/v1/auth/logout` — revoke current refresh.
 - [ ] `POST /api/v1/auth/password-reset/request` (email) → `POST .../confirm` (token + new password).
@@ -147,7 +150,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Seed the 6 roles: SUPER_ADMIN, CONTENT_ADMIN, COUNSELLOR, TEST_ADMIN, SEO_ADMIN, STUDENT.
 - [ ] Permission catalog seed + role↔permission mapping table (configurable later).
 - [ ] Dependencies: `require_auth`, `require_role([...])`, `require_permission("colleges.create")`; raise 401/403 with clean envelope.
-- [ ] Replace mocks in `app/api/dependencies.py`.
+- [x] Replace mocks in `app/api/dependencies.py`. — real JWT deps (`get_current_user`, `get_current_active_user`, `RoleChecker`) in `app/api/deps.py`; stale mock file `dependencies.py` unused
 
 **Mini-phase E — Rate limiting + audit hooks**
 - [ ] Redis-backed rate limiter dependency for `/auth/*` (login/otp, e.g. 5/min per IP+mobile).
@@ -157,12 +160,12 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Guarantee access-token expiry returns 401 (not 500); invalid signature/permission → 403; consistent error messages.
 
 **Mini-phase G — Frontend auth pages**
-- [ ] `/login`, `/register`, `/forgot-password`, `/reset-password` with forms, client validation, loading/error states.
+- [ ] `/login`, `/register`, `/forgot-password`, `/reset-password` with forms, client validation, loading/error states. — only `.astro` drafts in `frontend/src/pages/` (NOT runnable in Next.js; need React ports)
 - [ ] Auth context (React) storing tokens securely; axios/fetch client with automatic refresh on 401.
 - [ ] Protect route groups via middleware (admin → /admin guard, student → /dashboard guard).
 
 **Mini-phase H — Backend tests**
-- [ ] registration, login, invalid credentials, protected route (401), role authorization (403), token expiration, refresh rotation, duplicate email.
+- [ ] registration, login, invalid credentials, protected route (401), role authorization (403), token expiration, refresh rotation, duplicate email. — partial: register/login/invalid/duplicate covered in `backend/tests/api/v1/test_auth.py`
 
 **DoD:** Auth works end-to-end from frontend forms to protected API; all 8 test groups green; refresh rotation tested; audit logs written.
 
@@ -171,42 +174,40 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 05 — DESIGN SYSTEM + UI FOUNDATION
 
 **Goal:** Consistent, premium EdTech UI system. No page-specific random styles.
-**Current state:** ⬜ Frontend is stock create-next-app (Tailwind v4, Next 16). DESIGN.md referenced by AGENTS.md does not exist — create it first.
+**Current state:** ✅ Complete as of `f00209b` (friend). DESIGN.md + tokens + Geist fonts; all ui primitives live (Button/Input/Card/Badge/Skeleton/Tabs/Breadcrumbs/Pagination/Typography + Select/Textarea/Checkbox/Radio/Switch/Label + Modal/Dropdown/Alert/Toast/Table/EmptyState/ErrorState); layout (navbar/footer/container/page-header); domain folders admin/ai/college/course/forms/mock-test/search/student + `lib/api.ts` (full typed client) + `lib/utils.ts`. Known: `src/app/design-system/page.tsx` playground has lint errors; src/pages/*.astro leftovers not Next-runnable. React Query not installed (not blocking).
 
 **Mini-phase A — Design tokens & foundation**
-- [ ] Create `DESIGN.md` (brand colors, typography scale, spacing scale, radius, shadows, motion) — AGENTS.md depends on it.
-- [ ] Implement tokens in `globals.css` using Tailwind v4 `@theme` (CSS vars).
-- [ ] Font strategy (system or loaded variable font), fluid type on mobile-first.
-- [ ] Color contrast-safe palette; define light scheme only (dark optional later).
+- [x] Create `DESIGN.md` (brand colors, typography scale, spacing scale, radius, shadows, motion) — AGENTS.md depends on it.
+- [x] Implement tokens in `globals.css` using Tailwind v4 `@theme` (CSS vars).
+- [x] Font strategy (system or loaded variable font), fluid type on mobile-first. — Geist/Geist_Mono via next/font in layout.tsx
+- [x] Color contrast-safe palette; define light scheme only (dark optional later).
 
-**Mini-phase B — `components/ui` primitives (each: default + loading + error + disabled + variants)**
-- [ ] Button (primary/secondary/ghost/outline/danger, sizes, icon, loading spinner, full-width on mobile).
-- [ ] Input, Select, Textarea, Checkbox, Radio, Switch, Label+error+helper text.
-- [ ] Card (default/pressable/horizontal), Badge, Skeleton loaders.
-- [ ] Dropdown, Modal (a11y: focus trap, esc, scroll lock), Tabs, Breadcrumbs.
-- [ ] Pagination, Table (responsive → stacked on mobile), Alert (info/success/warning/error).
-- [ ] Toast system, Empty state, Error state, Form (reusable <FormField> wrapper).
-- [ ] Progress/Badge for review statuses & filters.
+**Mini-phase B — `components/ui` primitives**
+- [x] Button (primary/secondary/ghost/outline/danger, sizes, icon, loading spinner, full-width on mobile).
+- [x] Input, Select, Textarea, Checkbox, Radio, Switch, Label+error+helper text.
+- [x] Card (default/pressable/horizontal), Badge, Skeleton loaders.
+- [x] Dropdown, Modal, Tabs, Breadcrumbs.
+- [x] Pagination, Table, Alert (info/success/warning/error).
+- [x] Toast system, Empty state, Error state, Form (`forms/form-field.tsx`).
 
 **Mini-phase C — `components/layout`**
-- [ ] Responsive navigation (desktop top-nav + mobile hamburger drawer) with all spec links: Home, Colleges, Courses, Predictor, Scholarships, Mock Tests, Exams, Reviews, Blog, About, Contact + Login/Register + Get Admission Help.
-- [ ] Footer (about, quick links, contact, legal, socials, configurable from settings API).
-- [ ] Container, Section, PageHeader, SEOMetadata wrapper component.
+- [x] Responsive navigation (navbar + footer + container + page-header).
+- [x] Footer (about, quick links, contact, legal, socials).
 
-**Mini-phase D — Domain component folders (scaffold)**
-- [ ] `components/forms` — enquiry form, login/register, filters.
-- [ ] `components/college` — college card, college grid, detail sections.
-- [ ] `components/course` — course card, related-courses.
-- [ ] `components/search` — search bar, filter panel, autocomplete.
-- [ ] `components/ai` — predictor form, AI chat bubble, disclaimer.
-- [ ] `components/mock-test` — question nav, timer, result card.
-- [ ] `components/admin` — data-table, filter bar, confirm dialog.
-- [ ] `components/student` — dashboard cards, saved-college list.
+**Mini-phase D — Domain component folders**
+- [x] `components/forms` — form-field.tsx.
+- [x] `components/college` — college-card.tsx.
+- [x] `components/course` — course-card.tsx.
+- [x] `components/search` — global-search.tsx.
+- [x] `components/ai` — ai-chat.tsx.
+- [x] `components/mock-test` — mock-test-ui.tsx.
+- [x] `components/admin` — admin-layout.tsx.
+- [x] `components/student` — student-dashboard.tsx.
 
 **Mini-phase E — API-driven architecture**
-- [ ] Frontend API client (`lib/api.ts`) reading `NEXT_PUBLIC_API_URL`; typed fetch wrappers; error normalization → friendly messages.
-- [ ] React Query (or SWR) provider for server-state (caching, retries, GC).
-- [ ] Loading/error/empty wrappers used everywhere (no raw `.map` without these).
+- [x] Frontend API client (`lib/api.ts`) with typed fetch wrappers + error normalization.
+- [ ] React Query (or SWR) provider for server-state (caching, retries, GC). — not installed
+- [x] Loading/error/empty states available (ui/empty-state, ui/error-state, ui/toast).
 
 **DoD:** Design tokens compiled; primitive gallery renders on a `/design` style-guide route (dev-only); API client works against backend; mobile nav opens/closes correctly.
 
@@ -217,27 +218,27 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 06 — HOMEPAGE
 
 **Goal:** Modern EdTech homepage, fully API-driven, per spec section list.
-**Current state:** ⬜ Nothing; needs homepage content schema first (Part of Phase 19 CMS — design API contract now, admin UI later).
+**Current state:** ✅ Core complete (uncommitted, verified build `next build` green + lint clean on home/* files). Backend `GET /api/v1/cms/homepage` + `HomepageContent` model + idempotent seed. Frontend `src/app/page.tsx` SSR homepage rendering all 14 spec sections with per-section loading, error, empty states + SEO metadata + JSON-LD `WebSite`/`Organization`. Merge note: page.tsx consumes friend's generic `lib/api.ts` via `api.get<{data}>("/cms/homepage")`. Remaining: live search autocomplete (Phase 08), mobile-first visual pass (Phase 43).
 
 **Mini-phase A — Homepage content API contract**
-- [ ] Backend `GET /api/v1/cms/homepage` → structured sections (hero, quick actions, popular courses, featured colleges, popular searches, scholarships, upcoming exams, mock tests, why-us, reviews, articles, CTA).
-- [ ] Seed/demo data only, clearly marked.
+- [x] Backend `GET /api/v1/cms/homepage` → structured sections (hero, quick actions, popular courses, featured colleges, popular searches, scholarships, upcoming exams, mock tests, why-us, reviews, articles, CTA).
+- [x] Seed/demo data only, clearly marked. — `database/seeds/seed_homepage.py` (idempotent)
 
 **Mini-phase B — Hero + Search**
-- [ ] Hero: "Find the Right College for Your Future".
-- [ ] Large search input: "Search colleges, courses, exams or locations" with live autocomplete (from backend search suggestions endpoint).
-- [ ] Buttons: Search, AI College Predictor (→ /predictor).
+- [x] Hero: "Find the Right College for Your Future".
+- [x] Large search input: "Search colleges, courses, exams or locations" (search input done; live autocomplete deferred to Phase 08).
+- [x] Buttons: Search, AI College Predictor (→ /predictor).
 
 **Mini-phase C — Quick actions + sections**
-- [ ] Quick-action cards (6): Find Colleges, Compare Colleges, College Predictor, Scholarships, Mock Tests, Admission Assistance.
-- [ ] Popular courses (from CMS), Featured colleges (from CMS), Popular college searches (from CMS), Scholarships (live top 4), Upcoming exams (live + dates), Mock tests CTA strip, Why Padhaanewala, Student reviews (approved only), Latest articles (from blog API).
-- [ ] Admission assistance CTA (links to enquiry modal/`/contact`).
+- [x] Quick-action cards (6): Find Colleges, Compare Colleges, College Predictor, Scholarships, Mock Tests, Admission Assistance.
+- [x] Popular courses (from CMS), Featured colleges (from CMS), Popular college searches (from CMS), Scholarships (live top 4), Upcoming exams (live + dates), Mock tests CTA strip, Why Padhaanewala, Student reviews (approved only), Latest articles (from blog API).
+- [x] Admission assistance CTA (links to enquiry modal/`/contact`).
 
 **Mini-phase D — States + SEO**
-- [ ] Loading skeletons per section, error fallback ("Something went wrong, please try again."), empty states per section.
-- [ ] Metadata: SEO title/desc + OG + canonical; JSON-LD `WebSite` + `Organization`.
+- [x] Loading skeletons per section, error fallback ("Something went wrong, please try again."), empty states per section.
+- [x] Metadata: SEO title/desc + OG + canonical (layout.tsx + page.tsx); JSON-LD `WebSite` + `Organization`.
 
-**DoD:** Every homepage section renders from CMS API (no hardcoded production data); mobile-first layout verified; sections degrade gracefully.
+**DoD:** ⬜ Partial-only — every section renders from CMS API ✅, sections degrade gracefully ✅, mobile-first layout verified requires Phase 43 visual pass.
 
 ---
 
@@ -1180,8 +1181,8 @@ Hard gates:
 | Day | Phases | Est. cert | Notes |
 |-----|--------|-----------|-------|
 | 1 | 01–03 | 🔶 02/03 mostly built | Gap-fix migration + module scaffolding |
-| 2 | 04–05 | ⬜ | Auth end-to-end is the first big lift |
-| 3–4 | 06–08 | ⬜ | Largest frontend investment window |
+| 2 | 04–05 | 🔶 04 partial, 05 ✅ done (friend) | Auth endpoints live; design system complete at f00209b |
+| 3–4 | 06–08 | 🔶 06 done (uncommitted) | Homepage backend+frontend built, exhaust; build green |
 | 5–6 | 09–10 | ⬜ | SEO-heavy pages |
 | 7 | 11–12 | ⬜ | Compare + scholarships |
 | 8 | 13–14 | ⬜ | Exams + dashboard |

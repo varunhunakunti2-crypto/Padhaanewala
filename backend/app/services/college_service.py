@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.base import BaseService
 from app.models.education import College
-from app.schemas.college import CollegeCreate, CollegeUpdate
+from app.schemas.college import CollegeCreate, CollegeUpdate, CollegeRead
 from app.repositories.college_repository import college_repository
 from app.utils.pagination import paginate
 from app.schemas.common import PaginatedData
@@ -20,7 +20,7 @@ class CollegeService(BaseService[College, CollegeCreate, CollegeUpdate]):
 
     async def get_paginated(
         self, session: AsyncSession, page: int, size: int, search: str | None = None
-    ) -> PaginatedData[College]:
+    ) -> PaginatedData[CollegeRead]:
         query = self.repository.get_query(search=search)
         return await paginate(session, query, page, size)
 

@@ -1,6 +1,7 @@
 import uuid
-from sqlalchemy import String, ForeignKey, Text, Boolean
+from sqlalchemy import String, ForeignKey, Text, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin
 
@@ -42,6 +43,16 @@ class Banner(UUIDMixin, TimestampMixin, Base):
     link_url: Mapped[str | None] = mapped_column(String, nullable=True)
     position: Mapped[str] = mapped_column(String) # e.g. home_hero, sidebar
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+class HomepageContent(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "homepage_content"
+
+    section: Mapped[str] = mapped_column(String, unique=True, index=True)
+    title: Mapped[str | None] = mapped_column(String, nullable=True)
+    content: Mapped[dict] = mapped_column(JSONB, default=dict)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
 
 class SEOMetadata(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "seo_metadata"
