@@ -20,6 +20,10 @@ type FormState = {
   official_name: string
   college_type: string
   is_private: boolean
+  university_name: string
+  state: string
+  district: string
+  city: string
   accreditation: string
   recognition: string
   established_year: string
@@ -39,6 +43,7 @@ type FormState = {
   source_name: string
   source_url: string
   verification_status: string
+  last_verified_at: string
 }
 
 const empty: FormState = {
@@ -47,6 +52,10 @@ const empty: FormState = {
   official_name: "",
   college_type: "",
   is_private: true,
+  university_name: "",
+  state: "",
+  district: "",
+  city: "",
   accreditation: "",
   recognition: "",
   established_year: "",
@@ -66,6 +75,7 @@ const empty: FormState = {
   source_name: "",
   source_url: "",
   verification_status: "unverified",
+  last_verified_at: "",
 }
 
 export function CollegeForm({ college }: CollegeFormProps) {
@@ -80,6 +90,10 @@ export function CollegeForm({ college }: CollegeFormProps) {
       official_name: college.official_name ?? "",
       college_type: college.college_type ?? "",
       is_private: college.is_private ?? true,
+      university_name: college.university_name ?? "",
+      state: college.state ?? college.location?.state ?? "",
+      district: college.district ?? college.location?.district ?? "",
+      city: college.city ?? college.location?.city ?? "",
       accreditation: college.accreditation ?? "",
       recognition: college.recognition ?? "",
       established_year: college.established_year ? String(college.established_year) : "",
@@ -99,6 +113,9 @@ export function CollegeForm({ college }: CollegeFormProps) {
       source_name: college.source_name ?? "",
       source_url: college.source_url ?? "",
       verification_status: college.verification_status ?? "unverified",
+      last_verified_at: college.last_verified_at
+        ? new Date(college.last_verified_at).toISOString().slice(0, 10)
+        : "",
     }
   })
   const [saving, setSaving] = React.useState(false)
@@ -125,6 +142,10 @@ export function CollegeForm({ college }: CollegeFormProps) {
       official_name: form.official_name || undefined,
       college_type: form.college_type || undefined,
       is_private: form.is_private,
+      university_name: form.university_name || undefined,
+      state: form.state || undefined,
+      district: form.district || undefined,
+      city: form.city || undefined,
       accreditation: form.accreditation || undefined,
       recognition: form.recognition || undefined,
       established_year: form.established_year ? Number(form.established_year) : undefined,
@@ -144,6 +165,7 @@ export function CollegeForm({ college }: CollegeFormProps) {
       source_name: form.source_name || undefined,
       source_url: form.source_url || undefined,
       verification_status: form.verification_status,
+      last_verified_at: form.last_verified_at ? new Date(form.last_verified_at).toISOString() : undefined,
     }
     try {
       if (isEdit && college) {
@@ -204,6 +226,9 @@ export function CollegeForm({ college }: CollegeFormProps) {
           <FormField label="Recognition" htmlFor="rec">
             <Input id="rec" value={form.recognition} onChange={(e) => set("recognition", e.target.value)} placeholder="e.g. NMC approved" />
           </FormField>
+          <FormField label="University" htmlFor="uni">
+            <Input id="uni" value={form.university_name} onChange={(e) => set("university_name", e.target.value)} placeholder="e.g. Rajiv Gandhi University of Health Sciences" />
+          </FormField>
           <FormField label="Admission status" htmlFor="adm">
             <Select id="adm" value={form.admission_status} onChange={(e) => set("admission_status", e.target.value)}>
               <option value="">Select</option>
@@ -233,6 +258,15 @@ export function CollegeForm({ college }: CollegeFormProps) {
           </FormField>
           <FormField label="Pincode" htmlFor="pin">
             <Input id="pin" value={form.pincode} onChange={(e) => set("pincode", e.target.value)} placeholder="560100" />
+          </FormField>
+          <FormField label="State" htmlFor="state">
+            <Input id="state" value={form.state} onChange={(e) => set("state", e.target.value)} placeholder="e.g. Karnataka" />
+          </FormField>
+          <FormField label="District" htmlFor="district">
+            <Input id="district" value={form.district} onChange={(e) => set("district", e.target.value)} placeholder="e.g. Bengaluru Urban" />
+          </FormField>
+          <FormField label="City" htmlFor="city">
+            <Input id="city" value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="e.g. Bengaluru" />
           </FormField>
           <FormField label="Entrance exam" htmlFor="ent">
             <Input id="ent" value={form.entrance_exam} onChange={(e) => set("entrance_exam", e.target.value)} placeholder="e.g. NEET, KCET" />
@@ -275,6 +309,9 @@ export function CollegeForm({ college }: CollegeFormProps) {
               <option value="pending">Pending</option>
               <option value="verified">Verified</option>
             </Select>
+          </FormField>
+          <FormField label="Last verified date" htmlFor="lvd">
+            <Input id="lvd" type="date" value={form.last_verified_at} onChange={(e) => set("last_verified_at", e.target.value)} />
           </FormField>
         </div>
       </section>

@@ -76,8 +76,8 @@ async def read_college_by_slug(
     slug: str,
 ) -> Any:
     """Get college by SEO slug."""
-    college = await college_service.get_by_slug_or_404(session, slug)
-    return ResponseModel(data=college)
+    read = await college_service.get_read_by_slug(session, slug)
+    return ResponseModel(data=read)
 
 
 @router.get("/detail/{slug}", response_model=ResponseModel[CollegeDetail])

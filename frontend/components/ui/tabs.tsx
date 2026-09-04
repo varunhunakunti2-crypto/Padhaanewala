@@ -1,6 +1,11 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
+interface InjectedTabProps {
+  activeTab?: string
+  setActiveTab?: (value: string) => void
+}
+
 export function Tabs({ defaultValue, children, className }: { defaultValue: string, children: React.ReactNode, className?: string }) {
   const [activeTab, setActiveTab] = React.useState(defaultValue)
 
@@ -8,7 +13,7 @@ export function Tabs({ defaultValue, children, className }: { defaultValue: stri
     <div className={cn("flex flex-col w-full", className)}>
       {React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, { activeTab, setActiveTab })
+          return React.cloneElement(child as React.ReactElement<Partial<InjectedTabProps>>, { activeTab, setActiveTab })
         }
         return child
       })}
@@ -28,7 +33,7 @@ export function TabsList({ children, className, activeTab, setActiveTab }: TabsL
     <div className={cn("flex items-center gap-2 mb-4 border-b border-hairline pb-2", className)}>
       {React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, { activeTab, setActiveTab })
+          return React.cloneElement(child as React.ReactElement<Partial<InjectedTabProps>>, { activeTab, setActiveTab })
         }
         return child
       })}

@@ -12,7 +12,17 @@ export interface College {
   recognition?: string | null
   established_year?: number | null
   university_id?: string | null
+  university_name?: string | null
   location_id?: string | null
+  location?: {
+    state?: string | null
+    district?: string | null
+    city?: string | null
+    pincode?: string | null
+  } | null
+  state?: string | null
+  district?: string | null
+  city?: string | null
   website?: string | null
   email?: string | null
   phone?: string | null
@@ -66,6 +76,7 @@ export type CollegeListParams = {
   rating?: number
   accreditation?: string
   admission_status?: string
+  verification_status?: string
   is_published?: boolean
 }
 

@@ -234,6 +234,31 @@ export default async function CollegeDetailPage({ params }: PageProps) {
             </section>
           )}
 
+          {/* Gallery */}
+          {data.gallery.length > 0 && (
+            <section>
+              <h2 className="font-geist-sans text-[20px] font-semibold tracking-[-0.4px] text-ink">Gallery</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {data.gallery.map((g, i) => (
+                  <a
+                    key={i}
+                    href={g.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group overflow-hidden rounded-md border border-hairline bg-canvas-elevated"
+                  >
+                    <img
+                      src={g.url}
+                      alt={g.alt_text ?? `${data.name} photo ${i + 1}`}
+                      className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Facilities */}
           {data.facilities.length > 0 && (
             <section>

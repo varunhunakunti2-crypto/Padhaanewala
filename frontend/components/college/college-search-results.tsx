@@ -175,7 +175,7 @@ export function CollegeSearchResults() {
                   </p>
                   <p className="mt-3 flex items-center gap-1.5 text-[13px] text-body">
                     <MapPin className="h-4 w-4 text-mute" aria-hidden />
-                    {[sp.get("city"), sp.get("state")].filter(Boolean).join(", ") || (c.admission_status ?? "Details available")}
+                    {[c.city ?? sp.get("city"), c.state ?? sp.get("state")].filter(Boolean).join(", ") || (c.admission_status ?? "Details available")}
                   </p>
                 </div>
               </a>

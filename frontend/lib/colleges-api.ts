@@ -19,10 +19,8 @@ export const collegesPublicApi = {
 
 // Admin college API — RBAC-protected on the backend.
 export const adminCollegesApi = {
-  list: (params?: CollegeListParams & { is_published?: boolean }) =>
-    api.get<Envelope<PaginatedItems<College>>>(
-      `/colleges${buildQuery({ ...params, is_published: undefined })}`,
-    ),
+  list: (params?: CollegeListParams) =>
+    api.get<Envelope<PaginatedItems<College>>>(`/admin/colleges${buildQuery(params ?? {})}`),
   create: (body: Partial<College>) =>
     api.post<Envelope<College>>("/admin/colleges", body),
   get: (id: string) =>
@@ -38,4 +36,16 @@ export const adminCollegesApi = {
   archive: (id: string) => api.delete<Envelope<College>>(`/admin/colleges/${id}`),
   bulkArchive: (ids: string[]) =>
     api.post<Envelope<{ archived: number }>>("/admin/colleges/bulk/archive", ids),
+  bulkPublish: (ids: string[], is_published: boolean) =>
+    api.post<Envelope<{ updated: number }>>("/admin/colleges/bulk/publish", {
+      ids,
+      is_published,
+    }),
+  bulkVerify: (
+    ids: string[],
+    body: { verification_status: string; last_verified_at?: string },
+  ) => api.post<Envelope<{ updated: number }>>("/admin/colleges/bulk/verify", {
+    ids,
+    ...body,
+  }),
 }

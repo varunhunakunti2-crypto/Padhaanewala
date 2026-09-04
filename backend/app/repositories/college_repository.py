@@ -39,6 +39,7 @@ class CollegeRepository(BaseRepository[College, CollegeCreate, CollegeUpdate]):
         rating: float | None = None,
         accreditation: str | None = None,
         admission_status: str | None = None,
+        verification_status: str | None = None,
         is_published: bool | None = None,
     ):
         """Return a query object suitable for pagination with all filters applied."""
@@ -50,7 +51,11 @@ class CollegeRepository(BaseRepository[College, CollegeCreate, CollegeUpdate]):
         if search:
             like = f"%{search.strip()}%"
             query = query.where(
-                or_(College.name.ilike(like), College.official_name.ilike(like))
+                or_(
+                    College.name.ilike(like),
+                    College.official_name.ilike(like),
+                    College.college_code.ilike(like),
+                )
             )
 
         if state or district or city:
@@ -100,6 +105,9 @@ class CollegeRepository(BaseRepository[College, CollegeCreate, CollegeUpdate]):
 
         if admission_status:
             query = query.where(College.admission_status == admission_status)
+
+        if verification_status:
+            query = query.where(College.verification_status == verification_status)
 
         if rating is not None:
             query = query.where(College.rating >= rating)

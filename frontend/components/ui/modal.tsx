@@ -3,7 +3,6 @@
 import * as React from "react"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "./button"
 
 interface ModalProps {
   isOpen: boolean
@@ -103,7 +102,7 @@ export function Modal({
   )
 }
 
-interface ModalFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
+type ModalFooterProps = React.HTMLAttributes<HTMLDivElement>
 
 export function ModalFooter({ className, children, ...props }: ModalFooterProps) {
   return (
