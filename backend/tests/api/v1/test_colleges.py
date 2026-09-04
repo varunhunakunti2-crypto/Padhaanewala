@@ -37,10 +37,10 @@ async def test_get_colleges_pagination(client: AsyncClient):
     for i in range(5):
         code = f"C{i}-{uuid.uuid4().hex[:6]}"
         await client.post(
-            "/api/v1/colleges/", 
-            json={"name": f"College {i}", "college_code": code}
+            "/api/v1/colleges/",
+            json={"name": f"College {i}", "college_code": code, "is_published": True},
         )
-    
+
     response = await client.get("/api/v1/colleges/?page=1&size=3")
     assert response.status_code == 200
     content = response.json()
@@ -74,16 +74,18 @@ async def test_create_college_with_location_and_university(client: AsyncClient):
 
 
 async def test_duplicate_slug_gets_suffix(client: AsyncClient):
-    for i in range(2):
+    # Two names that normalize differently (bypassing the duplicate-name guard)
+    # but slugify to the same base: "&" -> "and" in slugs, dropped in normalization.
+    for i, name in enumerate(["Identical & Name College", "Identical and Name College"]):
         code = f"SLUG{i}-{uuid.uuid4().hex[:6]}"
         await client.post(
             "/api/v1/colleges/",
-            json={"name": "Identical Name College", "college_code": code},
+            json={"name": name, "college_code": code, "is_published": True},
         )
 
     response = await client.get("/api/v1/colleges/?search=Identical&size=10")
     data = response.json()["data"]
-    slugs = [item["slug"] for item in data["items"] if item["name"] == "Identical Name College"]
+    slugs = [item["slug"] for item in data["items"] if "identica" in item["name"].lower()]
     assert len(slugs) == 2
     assert len(set(slugs)) == 2
 
@@ -125,7 +127,9 @@ async def test_filter_by_verification_status_and_private(client: AsyncClient):
         await url("/"),
         params={"verification_status": "verified", "is_private": True, "is_published": True},
     )
-    assert admin_list.status_code in (200, 403)
+    # Admin endpoints are RBAC-gated: 401/403 when unauthenticated/forbidden,
+    # 200 when the caller is allowed. Assert we are rejected or OK, never 500.
+    assert admin_list.status_code in (200, 401, 403)
 
 
 async def test_sort_by_name(client: AsyncClient):
@@ -153,6 +157,7 @@ async def test_facets_public_endpoint(client: AsyncClient):
             "state": "Karnataka",
             "district": "Bengaluru",
             "city": "Bengaluru",
+            "is_published": True,
         },
     )
 
@@ -192,8 +197,9 @@ async def test_bulk_publish_and_archive(client: AsyncClient):
         ids.append(resp.json()["data"]["id"])
 
     response = await client.post("/api/v1/admin/colleges/bulk/publish", json={"ids": ids, "is_published": True})
-    if response.status_code in (200, 403):
-        assert response.json()["success"] is True or response.status_code == 403
+    assert response.status_code in (200, 401, 403)
+    if response.status_code == 200:
+        assert response.json()["success"] is True
 
     archive = await client.post("/api/v1/admin/colleges/bulk/archive", json=ids)
-    assert archive.status_code in (200, 403)
+    assert archive.status_code in (200, 401, 403)

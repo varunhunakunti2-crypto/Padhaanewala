@@ -19,7 +19,19 @@ async def register(
     user_in: UserCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
-    return await AuthService.register_user(db, user_in)
+    user = await AuthService.register_user(db, user_in)
+    # Build the response from scalar fields only: the ORM `roles` relationship
+    # is async-lazy (would raise MissingGreenlet during response serialization)
+    # and the UUID `id` must be stringified for the schema.
+    return UserSchema(
+        id=str(user.id),
+        email=user.email,
+        phone=user.phone,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        created_at=user.created_at,
+        roles=[],
+    )
 
 @router.post("/login/access-token", response_model=Token)
 async def login_access_token(

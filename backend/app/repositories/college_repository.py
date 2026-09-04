@@ -195,27 +195,39 @@ class CollegeRepository(BaseRepository[College, CollegeCreate, CollegeUpdate]):
             min_fee=min_fee,
             max_fee=max_fee,
         )
-        query = self._apply_joins(select(College), joins)
 
         clauses = self._filter_clauses(**filter_kwargs)
-        if clauses:
-            query = query.where(and_(*clauses))
 
         search_tsquery = None
         s = (search or "").strip()
         if s:
             search_tsquery = func.websearch_to_tsquery("english", s)
-            query = query.where(
+            # ILIKE is expressed via lower() + LIKE so the pg_trgm GIN index on
+            # lower(name)/lower(official_name)/lower(college_code) can be used.
+            pattern = f"%{s.lower()}%"
+            clauses.append(
                 or_(
                     College.search_vector.op("@@")(search_tsquery),
-                    College.name.ilike(f"%{s}%"),
-                    College.official_name.ilike(f"%{s}%"),
-                    College.college_code.ilike(f"%{s}%"),
+                    func.lower(College.name).like(pattern),
+                    func.lower(College.official_name).like(pattern),
+                    func.lower(College.college_code).like(pattern),
                 )
             )
 
+        # Distinct college IDs that match the filters. Deduplicating here (not on
+        # the full SELECT) keeps `ORDER BY` expressions like ts_rank or the
+        # min-fee subquery legal: PostgreSQL rejects ORDER BY columns that are
+        # not in the select list on a `SELECT DISTINCT ...`.
+        ids_subq = self._apply_joins(
+            select(College.id).select_from(College), joins
+        )
+        if clauses:
+            ids_subq = ids_subq.where(and_(*clauses))
+        ids_subq = ids_subq.distinct()
+
+        query = select(College).where(College.id.in_(ids_subq))
         query = self._apply_order(query, sort=sort, search_tsquery=search_tsquery)
-        return query.distinct()
+        return query
 
     async def _facet_rows(
         self,

@@ -193,7 +193,7 @@ class CollegeService(BaseService[College, CollegeCreate, CollegeUpdate]):
         session.add(obj)
         await session.commit()
         await session.refresh(obj)
-        return obj
+        return await self._to_read(session, obj)
 
     async def update(self, session: AsyncSession, id: uuid.UUID, obj_in: CollegeUpdate) -> College:
         db_obj = await self.get_or_404(session, id)
