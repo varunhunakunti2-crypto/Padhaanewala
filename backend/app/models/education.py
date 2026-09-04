@@ -15,6 +15,25 @@ class University(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, B
 class College(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, Base):
     college_code: Mapped[str] = mapped_column(String, unique=True, index=True)
     name: Mapped[str] = mapped_column(String, index=True)
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True)
+    official_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    college_type: Mapped[str | None] = mapped_column(String, nullable=True) # dental, medical, engineering, ayush...
+    is_private: Mapped[bool] = mapped_column(Boolean, default=True) # True = private, False = government
+    accreditation: Mapped[str | None] = mapped_column(String, nullable=True) # e.g. NAAC A, NABH
+    recognition: Mapped[str | None] = mapped_column(String, nullable=True) # e.g. NMC, AICTE approved
+    established_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    website: Mapped[str | None] = mapped_column(String, nullable=True)
+    email: Mapped[str | None] = mapped_column(String, nullable=True)
+    phone: Mapped[str | None] = mapped_column(String, nullable=True)
+    admission_status: Mapped[str | None] = mapped_column(String, nullable=True) # open / closed / tentative
+    rating: Mapped[float | None] = mapped_column(Float, nullable=True) # denormalized from approved reviews
+    has_hostel: Mapped[bool] = mapped_column(Boolean, default=False)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    google_maps_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    google_place_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    verified_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     university_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("universities.id", ondelete="SET NULL"), nullable=True)
     location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id", ondelete="SET NULL"), nullable=True)
     search_vector: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True)

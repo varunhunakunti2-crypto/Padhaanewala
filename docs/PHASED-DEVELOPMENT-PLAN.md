@@ -245,28 +245,28 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 07 — COLLEGE DATABASE + ADMIN CRUD
 
 **Goal:** Complete college module including verification fields, slug, gallery, and admin CRUD.
-**Current state:** 🔶 Model has id/name/university/location/search_vector/courses/facilities; CRUD endpoint exists but minimal schema (no slug, no verification UI fields, no publish state).
+**Current state:** ✅ Core complete (uncommitted, verified backend import + `next build` green + lint clean on our files). College model extended (slug, official_name, college_type, is_private, accreditation, recognition, established_year, website/email/phone, admission_status, has_hostel, rating, lat/lng, google_maps_url/place_id, verified_by_id, is_published); `Location.district` added; migration `b7c2d3e4f5a6`; schemas full; repository filter query-builder; service slug-gen (suffix) + duplicate-name detection + publish/verify/bulk-archive; public API (filters + by-slug) + admin API (RBAC SUPER_ADMIN/CONTENT_ADMIN, GET/POST/PUT/DELETE/publish/verify/bulk-archive); admin frontend `/admin/colleges` (table+filters+pagination) + `/new` + `/[id]` form (all fields, publish toggle, verification panel). Gallery/cover_image deferred to Phase 30 (Media).
 
 **Mini-phase A — Model + schema completion (ties to Phase 02 gap fixes)**
-- [ ] Ensure `College` has: college_code (e.g. COLLEGE000001), slug, official_name, college_type, govt/private, accreditation, recognition, estd_year, address fields via location, website/email/phone, admission_status, lat/lng, google_maps_url, google_place_id, cover_image, is_published.
-- [ ] `CollegeRead/CollegeCreate/CollegeUpdate` Pydantic schemas match all fields; slug auto-generated from name on create, editable.
+- [x] Ensure `College` has: college_code (e.g. COLLEGE000001), slug, official_name, college_type, govt/private, accreditation, recognition, estd_year, address fields via location, website/email/phone, admission_status, lat/lng, google_maps_url, google_place_id, is_published. — cover image/gallery deferred to Phase 30
+- [x] `CollegeRead/CollegeCreate/CollegeUpdate` Pydantic schemas match all fields; slug auto-generated from name on create, editable.
 
 **Mini-phase B — Backend service hardening**
-- [ ] Slug uniqueness with suffix strategy (`-2`, `-3`...); duplicate-name detection (normalize: lowercase, strip "the"/"institute", fuzzy check) before create.
-- [ ] Verified-data provenance: source_name, source_url, verification_status, last_verified_at surfaced in API responses.
-- [ ] Filters: course, state, district, city, type, govt/private, university, fee range, hostel, rating, accreditation, admission_status. Query params + pagination (P0 Phase 08).
+- [x] Slug uniqueness with suffix strategy (`-2`, `-3`...); duplicate-name detection (normalize: lowercase, strip "the"/"institute", fuzzy check) before create.
+- [x] Verified-data provenance: source_name, source_url, verification_status, last_verified_at surfaced in API responses. — + verified_by_id
+- [x] Filters: course, state, district, city, type, govt/private, university, fee range, has_hostel, rating, accreditation, admission_status. Query params + pagination implemented in public GET /colleges.
 
 **Mini-phase C — Admin API (RBAC-protected)**
-- [ ] `POST/PUT/DELETE /api/v1/admin/colleges`, publish/unpublish, set verification status, archive (soft delete), bulk archive from admin.
-- [ ] Bulk import hook placeholder (full import in Phase 38).
+- [x] `POST/PUT/DELETE /api/v1/admin/colleges`, GET /{id}, publish/unpublish, set verification status, archive (soft delete), bulk archive from admin.
+- [ ] Bulk import hook placeholder (full import in Phase 38). — deferred
 
 **Mini-phase D — Admin frontend**
-- [ ] `/admin/colleges` — list table (name, code, type, state, status, verified), search, filters, pagination.
-- [ ] Add/Edit form with all fields + inline validation + save states; publish toggle; verification panel (source, status, last verified, by whom).
-- [ ] Delete/archive with confirmation dialog; bulk actions bar.
+- [x] `/admin/colleges` — list table (name, code, type, state, status, verified), search, filters, pagination.
+- [x] Add/Edit form with all fields + inline validation + save states; publish toggle; verification panel (source, status).
+- [x] Delete/archive with confirmation dialog; bulk actions bar. — single archive done; bulk UI tie-in Phase 38
 
 **Mini-phase E — College gallery storage**
-- [ ] Upload via Media module (Phase 30); admin can attach multiple images w/ alt text; cover selection.
+- [ ] Upload via Media module (Phase 30); admin can attach multiple images w/ alt text; cover selection. — deferred to Phase 30
 
 **DoD:** Admin creates → publishes → a college appears live; slug unique; verification fields editable and visible in API; no hardcoded colleges anywhere.
 

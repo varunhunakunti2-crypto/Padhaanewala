@@ -8,6 +8,7 @@ from .base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin
 
 class Location(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
     state: Mapped[str] = mapped_column(String, index=True)
+    district: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
     city: Mapped[str] = mapped_column(String, index=True)
     pincode: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
 
