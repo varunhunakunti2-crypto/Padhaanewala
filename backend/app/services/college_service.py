@@ -6,15 +6,36 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.services.base import BaseService
-from app.models.education import College
+from app.models.education import (
+    College,
+    University,
+    CollegeCourse,
+    Course,
+    Facility,
+    CollegeFacility,
+    Admission,
+    Cutoff,
+)
+from app.models.exams import Exam
+from app.models.system import Location, Media
+from app.models.reviews import Review
+from app.models.content import FAQ
 from app.schemas.college import (
     CollegeCreate,
     CollegeUpdate,
     CollegeRead,
     CollegePublishUpdate,
     CollegeVerifyUpdate,
+    CollegeDetail,
+    CollegeCourseDetail,
+    CollegeFacilityDetail,
+    CollegeReviewDetail,
+    CollegeFaqDetail,
+    CollegeCutoffDetail,
+    CollegeMediaDetail,
 )
 from app.repositories.college_repository import college_repository
 from app.utils.pagination import paginate
@@ -104,6 +125,116 @@ class CollegeService(BaseService[College, CollegeCreate, CollegeUpdate]):
         if not college:
             raise HTTPException(status_code=404, detail="College not found")
         return college
+
+    async def get_detail(self, session: AsyncSession, slug: str) -> CollegeDetail:
+        """Assemble the full public college detail including courses, fees,
+        facilities, reviews, FAQs, cutoffs, gallery and verification info."""
+        college = await self.get_by_slug_or_404(session, slug)
+        if not college.is_published and not college.verification_status == "verified":
+            raise HTTPException(status_code=404, detail="College not found")
+
+        detail = CollegeDetail.model_validate(college)
+
+        if college.university_id:
+            uni = await session.get(University, college.university_id)
+            detail.university_name = uni.name if uni else None
+
+        if college.location_id:
+            loc = await session.get(Location, college.location_id)
+            if loc:
+                detail.location = {
+                    "state": loc.state,
+                    "district": loc.district,
+                    "city": loc.city,
+                    "pincode": loc.pincode or college.pincode,
+                }
+
+        # Courses + fees
+        cc_result = await session.execute(
+            select(CollegeCourse, Course)
+            .join(Course, CollegeCourse.course_id == Course.id)
+            .where(CollegeCourse.college_id == college.id)
+        )
+        detail.courses = [
+            CollegeCourseDetail(
+                course_id=course.id,
+                course_name=course.name,
+                level=course.level,
+                fees=cc.fees,
+                duration_months=cc.duration_months,
+                intake=cc.intake,
+            )
+            for cc, course in cc_result.all()
+        ]
+
+        # Facilities
+        fid_result = await session.execute(
+            select(Facility)
+            .join(CollegeFacility, CollegeFacility.facility_id == Facility.id)
+            .where(CollegeFacility.college_id == college.id)
+        )
+        detail.facilities = [CollegeFacilityDetail(name=f.name) for f in fid_result.scalars().all()]
+
+        # Approved reviews
+        rev_result = await session.execute(
+            select(Review)
+            .where(Review.college_id == college.id, Review.status == "approved")
+            .order_by(Review.created_at.desc())
+        )
+        detail.reviews = [
+            CollegeReviewDetail(
+                id=r.id, rating=r.rating, title=r.title, content=r.content, created_at=r.created_at
+            )
+            for r in rev_result.scalars().all()
+        ]
+
+        # FAQs
+        faq_result = await session.execute(
+            select(FAQ).where(FAQ.entity_type == "college", FAQ.entity_id == college.id)
+        )
+        detail.faqs = [
+            CollegeFaqDetail(question=f.question, answer=f.answer) for f in faq_result.scalars().all()
+        ]
+
+        # Cutoffs
+        cutoff_result = await session.execute(
+            select(Cutoff, Course, Exam)
+            .join(Course, Cutoff.course_id == Course.id)
+            .outerjoin(Exam, Cutoff.exam_id == Exam.id)
+            .where(Cutoff.college_id == college.id)
+            .order_by(Cutoff.year.desc())
+        )
+        detail.cutoffs = [
+            CollegeCutoffDetail(
+                course_name=course.name,
+                exam_name=exam.name if exam else None,
+                year=co.year,
+                category=co.category,
+                opening_rank=co.opening_rank,
+                closing_rank=co.closing_rank,
+            )
+            for co, course, exam in cutoff_result.all()
+        ]
+
+        # Gallery / media
+        media_result = await session.execute(
+            select(Media).where(Media.reference_type == "college", Media.reference_id == college.id)
+        )
+        detail.gallery = [
+            CollegeMediaDetail(url=m.url, alt_text=m.alt_text, image_type=m.reference_type)
+            for m in media_result.scalars().all()
+        ]
+
+        # Admission info / eligibility
+        adm_result = await session.execute(
+            select(Admission).where(Admission.college_id == college.id).order_by(Admission.created_at.desc())
+        )
+        adms = adm_result.scalars().first()
+        if adms:
+            detail.eligibility = adms.eligibility_criteria
+            detail.admission_process = adms.process_details
+
+        return detail
 
     async def publish(self, session: AsyncSession, id: uuid.UUID, obj_in: CollegePublishUpdate) -> College:
         db_obj = await self.get_or_404(session, id)

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
 from app.schemas.common import ResponseModel, PaginatedResponse
-from app.schemas.college import CollegeCreate, CollegeUpdate, CollegeRead
+from app.schemas.college import CollegeCreate, CollegeUpdate, CollegeRead, CollegeDetail
 from app.services.college_service import college_service
 
 router = APIRouter()
@@ -78,6 +78,18 @@ async def read_college_by_slug(
     """Get college by SEO slug."""
     college = await college_service.get_by_slug_or_404(session, slug)
     return ResponseModel(data=college)
+
+
+@router.get("/detail/{slug}", response_model=ResponseModel[CollegeDetail])
+async def read_college_detail(
+    *,
+    session: AsyncSession = Depends(get_db),
+    slug: str,
+) -> Any:
+    """Full college detail for the public detail page (courses, fees,
+    facilities, reviews, FAQs, cutoffs, gallery, admission info)."""
+    detail = await college_service.get_detail(session, slug)
+    return ResponseModel(data=detail)
 
 
 @router.get("/{id}", response_model=ResponseModel[CollegeRead])

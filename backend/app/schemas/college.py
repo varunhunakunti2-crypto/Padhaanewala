@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, UUID4, ConfigDict, Field
 from datetime import datetime
 
@@ -18,6 +18,9 @@ class CollegeBase(BaseModel):
     website: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    address: Optional[str] = None
+    pincode: Optional[str] = None
+    entrance_exam: Optional[str] = None
     admission_status: Optional[str] = None
     has_hostel: bool = False
     latitude: Optional[float] = None
@@ -51,6 +54,9 @@ class CollegeUpdate(BaseModel):
     website: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    address: Optional[str] = None
+    pincode: Optional[str] = None
+    entrance_exam: Optional[str] = None
     admission_status: Optional[str] = None
     has_hostel: Optional[bool] = None
     latitude: Optional[float] = None
@@ -86,3 +92,59 @@ class CollegeVerifyUpdate(BaseModel):
     )
     last_verified_at: Optional[datetime] = None
     verified_by: Optional[UUID4] = Field(None, description="User id doing the verification")
+
+
+# ---- Detail (public college detail page) ----
+
+class CollegeCourseDetail(BaseModel):
+    course_id: UUID4
+    course_name: str
+    level: Optional[str] = None
+    fees: Optional[float] = None
+    duration_months: Optional[int] = None
+    intake: Optional[int] = None
+
+
+class CollegeFacilityDetail(BaseModel):
+    name: str
+
+
+class CollegeReviewDetail(BaseModel):
+    id: UUID4
+    rating: int
+    title: Optional[str] = None
+    content: Optional[str] = None
+    created_at: datetime
+
+
+class CollegeFaqDetail(BaseModel):
+    question: str
+    answer: str
+
+
+class CollegeCutoffDetail(BaseModel):
+    course_name: str
+    exam_name: Optional[str] = None
+    year: int
+    category: Optional[str] = None
+    opening_rank: Optional[int] = None
+    closing_rank: Optional[int] = None
+
+
+class CollegeMediaDetail(BaseModel):
+    url: str
+    alt_text: Optional[str] = None
+    image_type: Optional[str] = None
+
+
+class CollegeDetail(CollegeRead):
+    university_name: Optional[str] = None
+    location: Optional[dict] = None
+    courses: List[CollegeCourseDetail] = []
+    facilities: List[CollegeFacilityDetail] = []
+    reviews: List[CollegeReviewDetail] = []
+    faqs: List[CollegeFaqDetail] = []
+    cutoffs: List[CollegeCutoffDetail] = []
+    gallery: List[CollegeMediaDetail] = []
+    eligibility: Optional[str] = None
+    admission_process: Optional[str] = None

@@ -26,6 +26,9 @@ type FormState = {
   website: string
   email: string
   phone: string
+  address: string
+  pincode: string
+  entrance_exam: string
   admission_status: string
   has_hostel: boolean
   latitude: string
@@ -50,6 +53,9 @@ const empty: FormState = {
   website: "",
   email: "",
   phone: "",
+  address: "",
+  pincode: "",
+  entrance_exam: "",
   admission_status: "",
   has_hostel: false,
   latitude: "",
@@ -80,6 +86,9 @@ export function CollegeForm({ college }: CollegeFormProps) {
       website: college.website ?? "",
       email: college.email ?? "",
       phone: college.phone ?? "",
+      address: college.address ?? "",
+      pincode: college.pincode ?? "",
+      entrance_exam: college.entrance_exam ?? "",
       admission_status: college.admission_status ?? "",
       has_hostel: college.has_hostel ?? false,
       latitude: college.latitude != null ? String(college.latitude) : "",
@@ -122,6 +131,9 @@ export function CollegeForm({ college }: CollegeFormProps) {
       website: form.website || undefined,
       email: form.email || undefined,
       phone: form.phone || undefined,
+      address: form.address || undefined,
+      pincode: form.pincode || undefined,
+      entrance_exam: form.entrance_exam || undefined,
       admission_status: form.admission_status || undefined,
       has_hostel: form.has_hostel,
       latitude: form.latitude ? Number(form.latitude) : undefined,
@@ -215,6 +227,15 @@ export function CollegeForm({ college }: CollegeFormProps) {
           </FormField>
           <FormField label="Phone" htmlFor="ph">
             <Input id="ph" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+          </FormField>
+          <FormField label="Address" htmlFor="addr">
+            <Input id="addr" value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street, area…" />
+          </FormField>
+          <FormField label="Pincode" htmlFor="pin">
+            <Input id="pin" value={form.pincode} onChange={(e) => set("pincode", e.target.value)} placeholder="560100" />
+          </FormField>
+          <FormField label="Entrance exam" htmlFor="ent">
+            <Input id="ent" value={form.entrance_exam} onChange={(e) => set("entrance_exam", e.target.value)} placeholder="e.g. NEET, KCET" />
           </FormField>
         </div>
       </section>

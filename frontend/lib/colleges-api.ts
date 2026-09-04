@@ -1,6 +1,7 @@
 import { api, buildQuery } from "@/lib/api"
 import type {
   College,
+  CollegeDetail,
   CollegeListParams,
   Envelope,
   PaginatedItems,
@@ -12,6 +13,8 @@ export const collegesPublicApi = {
     api.get<Envelope<PaginatedItems<College>>>(`/colleges${buildQuery(params ?? {})}`),
   getBySlug: (slug: string) =>
     api.get<Envelope<College>>(`/colleges/by-slug/${slug}`),
+  detail: (slug: string) =>
+    api.get<Envelope<CollegeDetail>>(`/colleges/detail/${slug}`),
 }
 
 // Admin college API — RBAC-protected on the backend.

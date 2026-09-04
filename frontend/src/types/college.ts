@@ -16,6 +16,9 @@ export interface College {
   website?: string | null
   email?: string | null
   phone?: string | null
+  address?: string | null
+  pincode?: string | null
+  entrance_exam?: string | null
   admission_status?: string | null
   has_hostel: boolean
   latitude?: number | null
@@ -64,4 +67,58 @@ export type CollegeListParams = {
   accreditation?: string
   admission_status?: string
   is_published?: boolean
+}
+
+export interface CollegeCourseDetail {
+  course_id: string
+  course_name: string
+  level?: string | null
+  fees?: number | null
+  duration_months?: number | null
+  intake?: number | null
+}
+
+export interface CollegeFacilityDetail {
+  name: string
+}
+
+export interface CollegeReviewDetail {
+  id: string
+  rating: number
+  title?: string | null
+  content?: string | null
+  created_at: string
+}
+
+export interface CollegeFaqDetail {
+  question: string
+  answer: string
+}
+
+export interface CollegeCutoffDetail {
+  course_name: string
+  exam_name?: string | null
+  year: number
+  category?: string | null
+  opening_rank?: number | null
+  closing_rank?: number | null
+}
+
+export interface CollegeMediaDetail {
+  url: string
+  alt_text?: string | null
+  image_type?: string | null
+}
+
+export interface CollegeDetail extends College {
+  university_name?: string | null
+  location?: { state?: string | null; district?: string | null; city?: string | null; pincode?: string | null } | null
+  courses: CollegeCourseDetail[]
+  facilities: CollegeFacilityDetail[]
+  reviews: CollegeReviewDetail[]
+  faqs: CollegeFaqDetail[]
+  cutoffs: CollegeCutoffDetail[]
+  gallery: CollegeMediaDetail[]
+  eligibility?: string | null
+  admission_process?: string | null
 }

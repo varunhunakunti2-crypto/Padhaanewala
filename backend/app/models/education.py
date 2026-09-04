@@ -25,6 +25,9 @@ class College(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, Base
     website: Mapped[str | None] = mapped_column(String, nullable=True)
     email: Mapped[str | None] = mapped_column(String, nullable=True)
     phone: Mapped[str | None] = mapped_column(String, nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pincode: Mapped[str | None] = mapped_column(String, nullable=True)
+    entrance_exam: Mapped[str | None] = mapped_column(String, nullable=True) # e.g. NEET, KCET
     admission_status: Mapped[str | None] = mapped_column(String, nullable=True) # open / closed / tentative
     rating: Mapped[float | None] = mapped_column(Float, nullable=True) # denormalized from approved reviews
     has_hostel: Mapped[bool] = mapped_column(Boolean, default=False)
