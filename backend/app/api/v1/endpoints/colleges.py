@@ -5,7 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
 from app.schemas.common import ResponseModel, PaginatedResponse
-from app.schemas.college import CollegeCreate, CollegeUpdate, CollegeRead, CollegeDetail
+from app.schemas.college import (
+    CollegeCreate,
+    CollegeUpdate,
+    CollegeRead,
+    CollegeDetail,
+    CollegeFacets,
+    CollegeSortValue,
+)
 from app.services.college_service import college_service
 
 router = APIRouter()
@@ -27,6 +34,7 @@ async def read_colleges(
     session: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(20, ge=1, le=100, description="Page size"),
+    sort: CollegeSortValue | None = Query(None, description="relevance / name / rating / fees_asc / fees_desc"),
     search: str | None = Query(None, description="Search by college name"),
     course: str | None = Query(None, description="Filter by course name"),
     state: str | None = Query(None, description="Filter by state"),
@@ -50,6 +58,7 @@ async def read_colleges(
         session,
         page=page,
         size=size,
+        sort=sort,
         search=search,
         course=course,
         state=state,
@@ -67,6 +76,51 @@ async def read_colleges(
         is_published=published_filter,
     )
     return PaginatedResponse(data=paginated_data)
+
+
+@router.get("/facets", response_model=ResponseModel[CollegeFacets])
+async def read_college_facets(
+    session: AsyncSession = Depends(get_db),
+    search: str | None = Query(None, description="Search by college name"),
+    course: str | None = Query(None, description="Filter by course name"),
+    state: str | None = Query(None, description="Filter by state"),
+    district: str | None = Query(None, description="Filter by district"),
+    city: str | None = Query(None, description="Filter by city"),
+    college_type: str | None = Query(None, description="e.g. dental, medical, engineering"),
+    is_private: bool | None = Query(None, description="True = private, False = government"),
+    university: str | None = Query(None, description="Filter by university name"),
+    min_fee: float | None = Query(None, ge=0, description="Minimum fee"),
+    max_fee: float | None = Query(None, ge=0, description="Maximum fee"),
+    has_hostel: bool | None = Query(None, description="Has hostel"),
+    rating: float | None = Query(None, ge=1, le=5, description="Minimum rating"),
+    accreditation: str | None = Query(None, description="e.g. NAAC A"),
+    admission_status: str | None = Query(None, description="open / closed / tentative"),
+) -> Any:
+    """Aggregated facet counts (states, courses, types, ...) for the filter UI.
+
+    Facet counts reflect the active filters so the UI can show accurate
+    "n colleges" per option; the facet's own dimension is excluded.
+    """
+    is_published = True
+    facets = await college_service.get_facets(
+        session,
+        search=search,
+        course=course,
+        state=state,
+        district=district,
+        city=city,
+        college_type=college_type,
+        is_private=is_private,
+        university=university,
+        min_fee=min_fee,
+        max_fee=max_fee,
+        has_hostel=has_hostel,
+        rating=rating,
+        accreditation=accreditation,
+        admission_status=admission_status,
+        is_published=is_published,
+    )
+    return ResponseModel(data=facets)
 
 
 @router.get("/by-slug/{slug}", response_model=ResponseModel[CollegeRead])

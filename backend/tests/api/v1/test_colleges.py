@@ -128,6 +128,59 @@ async def test_filter_by_verification_status_and_private(client: AsyncClient):
     assert admin_list.status_code in (200, 403)
 
 
+async def test_sort_by_name(client: AsyncClient):
+    for i, name in enumerate(["Zebra Medical College", "Alpha Dental College", "Midway College"]):
+        await client.post(
+            "/api/v1/colleges/",
+            json={"name": name, "college_code": f"SORT-{i}-{uuid.uuid4().hex[:6]}"},
+        )
+
+    resp = await client.get("/api/v1/colleges/?sort=name&size=10")
+    assert resp.status_code == 200
+    items = resp.json()["data"]["items"]
+    names = [i["name"] for i in items]
+    assert names == sorted(names)
+
+
+async def test_facets_public_endpoint(client: AsyncClient):
+    code = f"FC-{uuid.uuid4().hex[:6]}"
+    await client.post(
+        "/api/v1/colleges/",
+        json={
+            "name": "Facet Test Medical College",
+            "college_code": code,
+            "college_type": "medical",
+            "state": "Karnataka",
+            "district": "Bengaluru",
+            "city": "Bengaluru",
+        },
+    )
+
+    resp = await client.get("/api/v1/colleges/facets")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert "states" in data
+    assert "college_types" in data
+    assert "courses" in data
+    assert data["total"] >= 1
+
+
+async def test_suggestions_endpoint(client: AsyncClient):
+    code = f"SUG-{uuid.uuid4().hex[:6]}"
+    await client.post(
+        "/api/v1/colleges/",
+        json={"name": "Suggestion Engineering College", "college_code": code},
+    )
+
+    resp = await client.get("/api/v1/search/suggestions", params={"q": "engineering"})
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert "colleges" in data
+    assert "courses" in data
+    assert "exams" in data
+    assert "locations" in data
+
+
 async def test_bulk_publish_and_archive(client: AsyncClient):
     ids = []
     for i in range(2):

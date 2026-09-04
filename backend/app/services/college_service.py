@@ -35,6 +35,10 @@ from app.schemas.college import (
     CollegeFaqDetail,
     CollegeCutoffDetail,
     CollegeMediaDetail,
+    CollegeFacets,
+    FacetBucket,
+    SearchSuggestions,
+    SuggestionItem,
 )
 from app.repositories.college_repository import college_repository
 from app.utils.pagination import paginate
@@ -440,6 +444,7 @@ class CollegeService(BaseService[College, CollegeCreate, CollegeUpdate]):
         admission_status: str | None = None,
         verification_status: str | None = None,
         is_published: bool | None = None,
+        sort: str | None = None,
     ) -> PaginatedData[CollegeRead]:
         query = college_repository.get_query(
             search=search,
@@ -458,15 +463,137 @@ class CollegeService(BaseService[College, CollegeCreate, CollegeUpdate]):
             admission_status=admission_status,
             verification_status=verification_status,
             is_published=is_published,
+            sort=sort,
         )
         data = await paginate(session, query, page, size)
         items = [await self._to_read(session, c) for c in data.items]
+        await self._attach_courses(session, items)
         return PaginatedData(
             items=items,
             total=data.total,
             page=data.page,
             size=data.size,
             pages=data.pages,
+        )
+
+    async def _attach_courses(self, session: AsyncSession, items: list[CollegeRead]) -> None:
+        """Batch-attach course names + minimum fee to list results (avoids N+1)."""
+        if not items:
+            return
+        cc_result = await session.execute(
+            select(CollegeCourse.college_id, Course.name, CollegeCourse.fees)
+            .join(Course, CollegeCourse.course_id == Course.id)
+            .where(CollegeCourse.college_id.in_([item.id for item in items]))
+            .order_by(Course.name.asc())
+        )
+        buckets: dict = {item.id: ([], None) for item in items}
+        for cid, name, fees in cc_result.all():
+            names, min_fee = buckets[cid]
+            names.append(name)
+            if fees is not None:
+                buckets[cid] = (names, fees if min_fee is None else min(min_fee, fees))
+        for item in items:
+            names, min_fee = buckets[item.id]
+            item.course_names = names
+            item.min_fee = min_fee
+
+    async def get_facets(
+        self,
+        session: AsyncSession,
+        *,
+        search: str | None = None,
+        course: str | None = None,
+        state: str | None = None,
+        district: str | None = None,
+        city: str | None = None,
+        college_type: str | None = None,
+        is_private: bool | None = None,
+        university: str | None = None,
+        min_fee: float | None = None,
+        max_fee: float | None = None,
+        has_hostel: bool | None = None,
+        rating: float | None = None,
+        accreditation: str | None = None,
+        admission_status: str | None = None,
+        is_published: bool | None = None,
+    ) -> CollegeFacets:
+        """Aggregated counts per filter dimension to drive the search filter UI."""
+        raw = await college_repository.get_facets(
+            session,
+            search=search,
+            course=course,
+            state=state,
+            district=district,
+            city=city,
+            college_type=college_type,
+            is_private=is_private,
+            university=university,
+            min_fee=min_fee,
+            max_fee=max_fee,
+            has_hostel=has_hostel,
+            rating=rating,
+            accreditation=accreditation,
+            admission_status=admission_status,
+            is_published=is_published,
+        )
+        return CollegeFacets(
+            total=raw["total"],
+            states=[FacetBucket(label=label, count=count) for label, count in raw["states"]],
+            districts=[FacetBucket(label=label, count=count) for label, count in raw["districts"]],
+            cities=[FacetBucket(label=label, count=count) for label, count in raw["cities"]],
+            college_types=[FacetBucket(label=label, count=count) for label, count in raw["college_types"]],
+            courses=[FacetBucket(label=label, count=count) for label, count in raw["courses"]],
+            universities=[FacetBucket(label=label, count=count) for label, count in raw["universities"]],
+            accreditation=[FacetBucket(label=label, count=count) for label, count in raw["accreditation"]],
+            admission_statuses=[FacetBucket(label=label, count=count) for label, count in raw["admission_statuses"]],
+        )
+
+    async def get_suggestions(self, session: AsyncSession, q: str, limit: int = 5) -> SearchSuggestions:
+        """Autocomplete across colleges, courses, exams and locations."""
+        raw = await college_repository.search_suggestions(session, q, limit)
+        colleges = [
+            SuggestionItem(
+                type="college",
+                label=name,
+                value=slug,
+                sublabel=", ".join(filter(None, [city, state])) or None,
+            )
+            for name, slug, city, state in raw["colleges"]
+        ]
+        courses = [
+            SuggestionItem(
+                type="course",
+                label=name,
+                value=name,
+                sublabel=f"{count} college{'s' if count != 1 else ''}" if count else None,
+            )
+            for name, count in raw["courses"]
+        ]
+        exams = [
+            SuggestionItem(
+                type="exam",
+                label=name,
+                value=name,
+                sublabel=full_name or None,
+            )
+            for name, full_name in raw["exams"]
+        ]
+        locations: list[SuggestionItem] = []
+        locations.extend(
+            SuggestionItem(type="state", label=label, value=label, sublabel="State") for label in raw["states"]
+        )
+        locations.extend(
+            SuggestionItem(type="district", label=label, value=label, sublabel="District") for label in raw["districts"]
+        )
+        locations.extend(
+            SuggestionItem(type="city", label=label, value=label, sublabel="City") for label in raw["cities"]
+        )
+        return SearchSuggestions(
+            query=q.strip(),
+            colleges=colleges,
+            courses=courses,
+            exams=exams,
+            locations=locations,
         )
 
 

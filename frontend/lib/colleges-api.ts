@@ -2,15 +2,23 @@ import { api, buildQuery } from "@/lib/api"
 import type {
   College,
   CollegeDetail,
+  CollegeFacets,
   CollegeListParams,
   Envelope,
   PaginatedItems,
+  SearchSuggestions,
 } from "@/types/college"
 
 // Public college API (uses friend's generic client in lib/api.ts).
 export const collegesPublicApi = {
   list: (params?: CollegeListParams) =>
     api.get<Envelope<PaginatedItems<College>>>(`/colleges${buildQuery(params ?? {})}`),
+  facets: (params?: CollegeListParams) =>
+    api.get<Envelope<CollegeFacets>>(`/colleges/facets${buildQuery(params ?? {})}`),
+  suggestions: (q: string, limit?: number) =>
+    api.get<Envelope<SearchSuggestions>>(
+      `/search/suggestions${buildQuery({ q, limit: limit ?? 5 })}`
+    ),
   getBySlug: (slug: string) =>
     api.get<Envelope<College>>(`/colleges/by-slug/${slug}`),
   detail: (slug: string) =>

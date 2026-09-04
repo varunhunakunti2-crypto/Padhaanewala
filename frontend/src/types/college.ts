@@ -37,6 +37,8 @@ export interface College {
   google_place_id?: string | null
   is_published: boolean
   rating?: number | null
+  course_names?: string[] | null
+  min_fee?: number | null
   source_url?: string | null
   source_name?: string | null
   verification_status?: string | null
@@ -59,10 +61,13 @@ export interface Envelope<T> {
   data: T
 }
 
+export type CollegeSortValue = "relevance" | "name" | "rating" | "fees_asc" | "fees_desc"
+
 export type CollegeListParams = {
   page?: number
   size?: number
   search?: string
+  sort?: CollegeSortValue
   course?: string
   state?: string
   district?: string
@@ -132,4 +137,40 @@ export interface CollegeDetail extends College {
   gallery: CollegeMediaDetail[]
   eligibility?: string | null
   admission_process?: string | null
+}
+
+// ---- Phase 08: facets + suggestions ----
+
+export interface FacetBucket {
+  label: string
+  count: number
+}
+
+export interface CollegeFacets {
+  total: number
+  states: FacetBucket[]
+  districts: FacetBucket[]
+  cities: FacetBucket[]
+  college_types: FacetBucket[]
+  courses: FacetBucket[]
+  universities: FacetBucket[]
+  accreditation: FacetBucket[]
+  admission_statuses: FacetBucket[]
+}
+
+export type SuggestionType = "college" | "course" | "exam" | "state" | "district" | "city"
+
+export interface SuggestionItem {
+  type: SuggestionType
+  label: string
+  value: string
+  sublabel?: string | null
+}
+
+export interface SearchSuggestions {
+  query: string
+  colleges: SuggestionItem[]
+  courses: SuggestionItem[]
+  exams: SuggestionItem[]
+  locations: SuggestionItem[]
 }

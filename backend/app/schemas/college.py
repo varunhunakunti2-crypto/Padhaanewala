@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Literal, Optional, List
 from pydantic import (
     BaseModel,
     UUID4,
@@ -249,6 +249,8 @@ class CollegeRead(BaseModel):
     verification_status: Optional[str] = None
     last_verified_at: Optional[datetime] = None
     verified_by: Optional[str] = None
+    course_names: List[str] = []
+    min_fee: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 
@@ -356,3 +358,40 @@ class CollegeDetail(CollegeRead):
     gallery: List[CollegeMediaDetail] = []
     eligibility: Optional[str] = None
     admission_process: Optional[str] = None
+
+
+# ---- Phase 08: search, facets, suggestions ----
+
+CollegeSortValue = Literal["relevance", "name", "rating", "fees_asc", "fees_desc"]
+
+
+class FacetBucket(BaseModel):
+    label: str
+    count: int
+
+
+class CollegeFacets(BaseModel):
+    total: int = 0
+    states: List[FacetBucket] = []
+    districts: List[FacetBucket] = []
+    cities: List[FacetBucket] = []
+    college_types: List[FacetBucket] = []
+    courses: List[FacetBucket] = []
+    universities: List[FacetBucket] = []
+    accreditation: List[FacetBucket] = []
+    admission_statuses: List[FacetBucket] = []
+
+
+class SuggestionItem(BaseModel):
+    type: Literal["college", "course", "exam", "state", "district", "city"]
+    label: str
+    value: str
+    sublabel: Optional[str] = None
+
+
+class SearchSuggestions(BaseModel):
+    query: str
+    colleges: List[SuggestionItem] = []
+    courses: List[SuggestionItem] = []
+    exams: List[SuggestionItem] = []
+    locations: List[SuggestionItem] = []
