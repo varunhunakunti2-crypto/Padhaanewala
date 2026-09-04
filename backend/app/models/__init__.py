@@ -1,11 +1,27 @@
 from .base import Base
-from .user import User, Role, Permission, user_permissions
-from .student import StudentProfile, SavedCollege, StudentInterest
-from .crm import Counsellor, Enquiry, Lead, LeadActivity, Notification
-from .college import College, University, Location, Facility, college_facilities
-from .course import Course, CollegeCourse, Fee, Cutoff
-from .admission import Exam, Eligibility, AdmissionInformation, Scholarship
-from .assessment import QuestionBank, Question, MockTest, MockTestQuestion, TestAttempt, TestResult
-from .content import BlogArticle, FAQ, CMSContent, Review, Media
-from .system import AnalyticsEvent, AuditLog
-from .ai import RAGDocument, DocumentChunk, Embedding
+from .system import Location, Media, AuditLog, Notification
+from .user import User, Role, Permission, UserRole, RolePermission
+from .education import University, College, Course, CollegeCourse, Facility, CollegeFacility, Admission, Cutoff
+from .scholarships import Scholarship, ScholarshipCourse, ScholarshipState
+from .exams import Exam, ExamDate
+from .student import Student, StudentInterest, StudentEducationHistory, StudentSavedCollege, StudentScholarshipInterest
+from .reviews import Review, ReviewModeration
+from .mock_tests import Test, TestSection, Question, QuestionOption, TestAttempt, TestAnswer, TestResult
+from .content import Post, Category, PostCategory, FAQ, Banner, SEOMetadata
+from .crm import Counsellor, Lead, LeadStatusHistory, LeadNote, LeadFollowup, Enquiry
+from .rag import DocumentEmbedding
+
+__all__ = [
+    "Base",
+    "Location", "Media", "AuditLog", "Notification",
+    "User", "Role", "Permission", "UserRole", "RolePermission",
+    "University", "College", "Course", "CollegeCourse", "Facility", "CollegeFacility", "Admission", "Cutoff",
+    "Scholarship", "ScholarshipCourse", "ScholarshipState",
+    "Exam", "ExamDate",
+    "Student", "StudentInterest", "StudentEducationHistory", "StudentSavedCollege", "StudentScholarshipInterest",
+    "Review", "ReviewModeration",
+    "Test", "TestSection", "Question", "QuestionOption", "TestAttempt", "TestAnswer", "TestResult",
+    "Post", "Category", "PostCategory", "FAQ", "Banner", "SEOMetadata",
+    "Counsellor", "Lead", "LeadStatusHistory", "LeadNote", "LeadFollowup", "Enquiry",
+    "DocumentEmbedding"
+]
