@@ -4,8 +4,7 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.main import app
-from app.api.dependencies import get_db
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, get_db
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session():

@@ -1,0 +1,159 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Login | Padhaanewala">
+  <main class="min-h-screen flex items-center justify-center bg-gray-950 text-white relative overflow-hidden">
+    
+    <!-- Background Accents -->
+    <div class="absolute inset-0 z-0">
+      <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+      <div class="absolute top-40 -right-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div class="absolute -bottom-40 left-20 w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="relative z-10 w-full max-w-md p-8 bg-gray-900/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800 transition-all duration-300 hover:shadow-purple-500/10 hover:border-gray-700">
+      
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500">
+          Welcome Back
+        </h1>
+        <p class="text-sm text-gray-400 mt-2">Sign in to your Padhaanewala account</p>
+      </div>
+
+      <form id="loginForm" class="space-y-6">
+        <!-- Email Input -->
+        <div class="space-y-2 group">
+          <label for="email" class="text-sm font-medium text-gray-300 group-focus-within:text-purple-400 transition-colors">Email Address</label>
+          <div class="relative">
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              required 
+              class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              placeholder="you@example.com"
+            />
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="space-y-2 group">
+          <div class="flex items-center justify-between">
+            <label for="password" class="text-sm font-medium text-gray-300 group-focus-within:text-purple-400 transition-colors">Password</label>
+            <a href="/forgot-password" class="text-xs font-medium text-purple-400 hover:text-purple-300 transition-colors">Forgot password?</a>
+          </div>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              required 
+              class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              placeholder="••••••••"
+            />
+          </div>
+        </div>
+
+        <!-- Error Message Container -->
+        <div id="error-message" class="hidden text-sm text-red-400 bg-red-900/20 border border-red-900 rounded-lg p-3"></div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="w-full relative group overflow-hidden rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-3 font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95"
+        >
+          <span class="absolute right-0 w-8 h-32 -mt-12 transition-all duration-1000 transform translate-x-12 bg-white opacity-10 rotate-12 group-hover:-translate-x-96 ease"></span>
+          <span class="relative" id="btn-text">Sign In</span>
+          <span class="hidden relative" id="btn-loader">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Signing In...
+          </span>
+        </button>
+
+      </form>
+
+      <div class="mt-8 text-center text-sm text-gray-400">
+        Don't have an account? 
+        <a href="/register" class="font-medium text-purple-400 hover:text-purple-300 transition-colors">Sign up now</a>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const loginForm = document.getElementById('loginForm');
+  const errorMessage = document.getElementById('error-message');
+  const btnText = document.getElementById('btn-text');
+  const btnLoader = document.getElementById('btn-loader');
+  
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      // UI Loading state
+      btnText.classList.add('hidden');
+      btnLoader.classList.remove('hidden');
+      errorMessage.classList.add('hidden');
+      
+      try {
+        const formData = new URLSearchParams();
+        formData.append('username', email);
+        formData.append('password', password);
+
+        // Call the FastAPI endpoint we just created
+        const response = await fetch('http://localhost:8000/api/v1/auth/login/access-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Store token securely (localStorage for now, but HttpOnly cookies recommended for prod)
+          localStorage.setItem('access_token', data.access_token);
+          window.location.href = '/dashboard'; 
+        } else {
+          const errorData = await response.json();
+          errorMessage.textContent = errorData.detail || 'Failed to login. Please try again.';
+          errorMessage.classList.remove('hidden');
+        }
+      } catch (error) {
+        errorMessage.textContent = 'A network error occurred. Please try again later.';
+        errorMessage.classList.remove('hidden');
+      } finally {
+        // Reset UI Loading state
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+      }
+    });
+  }
+</script>
+
+<style>
+  /* Custom Animations for the Background Orbs */
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+</style>

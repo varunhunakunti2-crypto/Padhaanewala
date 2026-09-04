@@ -10,3 +10,7 @@ pydantic>=2.7.4
 pydantic-settings>=2.3.4
 python-multipart>=0.0.9
 celery>=5.4.0
+passlib[bcrypt]
+pyjwt
+email-validator
+fastapi-limiter
