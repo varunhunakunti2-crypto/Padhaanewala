@@ -1,47 +1,40 @@
-import * as React from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { Button } from "../ui/button";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-hairline bg-canvas">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            {/* Simple geometric logo placeholder */}
-            <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-gradient-develop-start to-gradient-preview-end" />
-            <span className="font-geist-sans text-[16px] font-semibold tracking-tight text-ink">
+    <nav className="border-b hairline-border bg-[var(--color-canvas)] sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16 items-center">
+          <div className="flex-shrink-0 flex items-center">
+            <Link href="/" className="text-xl font-bold tracking-tight text-[var(--color-ink)]">
               Padhaanewala
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-1">
-            <Link
-              href="/courses"
-              className="rounded-full px-3 py-1.5 text-[14px] font-medium text-body transition-colors hover:text-ink"
-            >
-              Courses
             </Link>
-            <Link
-              href="/colleges"
-              className="rounded-full px-3 py-1.5 text-[14px] font-medium text-body transition-colors hover:text-ink"
-            >
+          </div>
+          <div className="hidden md:flex space-x-8">
+            <Link href="/colleges" className="text-[var(--color-body)] hover:text-[var(--color-ink)] transition-colors px-3 py-2 rounded-full text-sm">
               Colleges
             </Link>
-            <Link
-              href="/mock-tests"
-              className="rounded-full px-3 py-1.5 text-[14px] font-medium text-body transition-colors hover:text-ink"
-            >
-              Mock Tests
+            <Link href="/courses" className="text-[var(--color-body)] hover:text-[var(--color-ink)] transition-colors px-3 py-2 rounded-full text-sm">
+              Courses
             </Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost-sm" className="hidden sm:inline-flex">
-            Log In
-          </Button>
-          <Button variant="primary-sm">Sign Up</Button>
+            <Link href="/scholarships" className="text-[var(--color-body)] hover:text-[var(--color-ink)] transition-colors px-3 py-2 rounded-full text-sm">
+              Scholarships
+            </Link>
+            <Link href="/exams" className="text-[var(--color-body)] hover:text-[var(--color-ink)] transition-colors px-3 py-2 rounded-full text-sm">
+              Exams
+            </Link>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Link href="/login">
+              <Button variant="ghost-sm">Log In</Button>
+            </Link>
+            <Link href="/register">
+              <Button variant="primary-sm">Sign Up</Button>
+            </Link>
+          </div>
         </div>
       </div>
-    </header>
-  )
+    </nav>
+  );
 }
