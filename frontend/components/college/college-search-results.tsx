@@ -95,6 +95,7 @@ type CollectionSuggestion = {
   filterKey: string
   label: string
   meta: string
+  slug?: string
 }
 
 export function CollegeSearchResults() {
@@ -189,7 +190,7 @@ export function CollegeSearchResults() {
         if (seq !== suggestionsSeqRef.current) return
         const out: CollectionSuggestion[] = []
         for (const s of res.data.colleges) {
-          out.push({ filterKey: "college", label: s.label, meta: s.sublabel ?? "" })
+          out.push({ filterKey: "college", label: s.label, slug: s.value, meta: s.sublabel ?? "" })
         }
         for (const s of res.data.courses) {
           out.push({ filterKey: "course", label: s.label, meta: "Course" })
@@ -222,8 +223,8 @@ export function CollegeSearchResults() {
   }, [])
 
   const pickSuggestion = (s: CollectionSuggestion) => {
-    if (s.filterKey === "college") {
-      router.push(`/college/${s.label}`)
+    if (s.filterKey === "college" && s.slug) {
+      router.push(`/college/${s.slug}`)
       return
     }
     if (s.filterKey === "exam") {

@@ -10,7 +10,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - Each phase ends with a **Definition of Done (DoD)**: the exact checks that prove the phase is complete.
 - Rubric: a task is "done" only when it runs, is verified, and (for backend) is covered by a test.
 
-> **Status snapshot:** ticks verified against `f00209b` + uncommitted Phase 06 homepage work (backend `/api/v1/cms/homepage`, seed, `src/app/page.tsx` SSR). Build verified `next build` green; `npm run lint` has 7 errors/7 warnings — ALL confined to friend's Phase 05 files (`ui/tabs.tsx`, `ui/checkbox.tsx`, `ui/label.tsx`, `ui/modal.tsx`, `ui/select.tsx`, `ui/textarea.tsx`, `ai/ai-chat.tsx`, `college/college-card.tsx`, `mock-test/mock-test-ui.tsx`, `student/student-dashboard.tsx`), not home/* files.
+> **Status snapshot (PROMPT 09 session, HEAD `f96d8d1`):** Phases 06–08 are committed on `origin/main` (homepage, college DB + admin CRUD, college search) and were pulled this session. This session implemented **Phase 09 — College Detail Page** (frontend + supporting bits): `/college/[slug]` fully rebuilt (Overview, Courses & Fees, Eligibility, Admission, Cutoffs, Facilities, Reviews, Gallery, FAQs, Map, Admission Assistance; breadcrumbs; `generateMetadata` w/ canonical/OG/twitter; JSON-LD `CollegeOrUniversity` + `Course` + `FAQPage` + `BreadcrumbList`; verification source/date; ISR `revalidate = 3600`), plus the **compare tray + `/compare` page** (Phase 11 mini-B), a **client-side "Save College" shortlist** (`lib/shortlist.ts`), and a **public `POST /api/v1/enquiries`** endpoint + migration `f2a3b4c5d6e7` (Phase 16 mini-A/B partial) with the college-page admission-assistance form. Frontend verified: `tsc --noEmit` clean, `npm run lint` **0 errors** (7 pre-existing warnings confined to friend's Phase 05 files). NOTE: backend additions (enquiries endpoint + migration) are **not yet run against a DB** — no working Python/PostgreSQL in this environment (venv interpreter is broken), so migrate with `alembic upgrade head` on a dev DB before use.
 > **Known merge issues:** (1) stale mock `app/api/dependencies.py` coexists with real `app/api/deps.py` — dead code; (2) 5 stale duplicate model files (`college.py`, `course.py`, `assessment.py`, `ai.py`, `admission.py`) — dead code; (3) `frontend/src/pages/*.astro` auth drafts are NOT runnable in Next.js; (4) `hello.c` stray at root; (5) `alembic.ini` missing (migrations need it).
 
 ---
@@ -275,27 +275,27 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 08 — COLLEGE SEARCH
 
 **Goal:** Advanced, SEO-friendly search with deep filtering.
-**Current state:** 🔶 Backend has simple `search` param on colleges; no filters.
+**Current state:** ✅ Complete at `f96d8d1` (commits `75f22f0` + `f96d8d1`, pulled this session). Backend: all Phase 07 filters + sort (relevance/name/rating/fees) on `GET /colleges`, FTS via `search_vector` tsvector + trigram ILIKE (migrations `d9e4f5a6b7c8`, `e1a2b3c4d5e6`), `GET /colleges/facets`, `GET /search/suggestions`. Frontend `/colleges`: search-param-driven filter UI, debounced autocomplete, mobile filter sheet, pagination + empty/error states, SEO title/canonical. Verified with a 30-test real-DB pytest suite (per commit `f96d8d1`).
 
 **Mini-phase A — Backend search API**
-- [ ] `GET /api/v1/colleges` extended with all Phase 07 filters; whitelisted params; `page`/`size`/`sort`.
-- [ ] Sort options: relevance, name, rating, fees asc/desc.
-- [ ] PostgreSQL search: `search_vector` tsvector (already on model) + trigram index on name; route query through it.
-- [ ] Aggregations endpoint `GET /api/v1/colleges/facets` (counts per state/course/type) to drive filter UI.
-- [ ] Autocomplete endpoint `GET /api/v1/search/suggestions?q=` returning colleges/courses/exams/locations.
+- [x] `GET /api/v1/colleges` extended with all Phase 07 filters; whitelisted params; `page`/`size`/`sort`.
+- [x] Sort options: relevance, name, rating, fees asc/desc.
+- [x] PostgreSQL search: `search_vector` tsvector (already on model) + trigram index on name; route query through it.
+- [x] Aggregations endpoint `GET /api/v1/colleges/facets` (counts per state/course/type) to drive filter UI.
+- [x] Autocomplete endpoint `GET /api/v1/search/suggestions?q=` returning colleges/courses/exams/locations.
 
 **Mini-phase B — Unit/index perf**
-- [ ] Index all filter columns; EXPLAIN ANALYZE on worst-case queries; paginate hard (max size 100).
+- [x] Index all filter columns; paginate hard (max size 100). — EXPLAIN ANALYZE measurement not yet documented (Phase 37)
 
 **Mini-phase C — Filter UI (`/colleges`)**
-- [ ] Filter panel: Course, State, District, City, Govt/Private, University, Fees range, Hostel, Rating, Accreditation, Admission status.
-- [ ] URL query params as source of truth (shareable, back-button friendly); filters persist; Clear Filters button.
-- [ ] Autocomplete suggestions in search bar; mobile: collapsible filter sheet.
+- [x] Filter panel: Course, State, District, City, Govt/Private, University, Fees range, Hostel, Rating, Accreditation, Admission status.
+- [x] URL query params as source of truth (shareable, back-button friendly); filters persist; Clear Filters button.
+- [x] Autocomplete suggestions in search bar; mobile: collapsible filter sheet.
 
 **Mini-phase D — Results + states**
-- [ ] Result cards (name, location, type, rating, courses, fee badge, Save/Compare actions).
-- [ ] Sorting control, pagination/load-more, no-results state with suggestion (broaden filters), error state.
-- [ ] SEO: dynamic title/desc/canonical reflecting active filters on curated paths (`/colleges/bhms-colleges-in-karnataka` — programmatic SEO Phase 31).
+- [x] Result cards (name, location, type, rating, courses, fee badge, Save/Compare toggles).
+- [x] Sorting control, pagination/load-more, no-results state with suggestion (broaden filters), error state.
+- [x] SEO: dynamic title/desc/canonical reflecting active filters on curated paths (`/colleges/bhms-colleges-in-karnataka` — programmatic SEO Phase 31).
 
 **DoD:** Query `course=BHMS&state=Karnataka&college_type=private` returns matching colleges on page 1 under measurement; all filters combined without error; URL shares filter state.
 
@@ -306,25 +306,25 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 09 — COLLEGE DETAIL PAGE
 
 **Goal:** Best-in-class SEO college page, fully DB-driven.
-**Current state:** ⬜ Nothing.
+**Current state:** 🔶 Core complete at PROMPT 09 (this session). Page `/college/[slug]` fully rebuilt with all content from the live detail API; backend detail API (`GET /api/v1/colleges/detail/{slug}`, schema + service + repo) was built in Phase 07. Remaining within phase: sticky mobile action bar (Call/WhatsApp), WhatsApp contextual CTA, schema.org-validator print-out, view-counter analytics (Phase 32), review form (Phase 20).
 
 **Mini-phase A — Backend detail API**
-- [ ] `GET /api/v1/colleges/{slug}` public: full college + courses+fees, admission, eligibility, cutoff (recent years), facilities, approved reviews+rating, gallery, FAQs, verification info, university, location.
-- [ ] Increment view counter (analytics); return breadcrumb trail.
+- [x] `GET /api/v1/colleges/detail/{slug}` public: full college + courses+fees, admission, eligibility, cutoff (recent years), facilities, approved reviews+rating, gallery, FAQs, verification info, university, location. — registered in Phase 07; consumed by this page
+- [ ] Increment view counter (analytics); return breadcrumb trail. — analytics Phase 32
 
 **Mini-phase B — Page layout (`/college/[slug]`)**
-- [ ] Header: name, location, type, rating/reviews, actions: Apply/Get Admission Help, Compare (adds to compare tray), Save College (auth).
-- [ ] Sticky mobile action bar (Call / WhatsApp / Enquiry).
-- [ ] Sections: Overview, Courses (tab/built-in with fees), Fees (structured + "Approximate fee" disclaimer), Eligibility, Admission, Cutoff (table by year/category), Facilities (chips), Reviews (approved only + form), Gallery (lazy images w/ alt), FAQs (accordion + FAQ schema), Map (lat/lng embed, external directions link).
-- [ ] Verification badge: "Last verified: <date>" + source name.
+- [x] Header: name, location, type, rating/reviews, actions Apply/Get Admission Help, Compare (adds to compare tray), Save College (client shortlist; auth-backed save deferred to Phase 15).
+- [ ] Sticky mobile action bar (Call / WhatsApp / Enquiry). — pending
+- [x] Sections: Overview; Courses (built-in with fees); Fees (structured + "Approximate fee" disclaimer); Eligibility; Admission; Cutoff (table by year/category); Facilities (chips); Reviews (approved only — submit form is Phase 20); Gallery (lazy images w/ alt); FAQs (accordion + FAQ schema); Map (lat/lng embed, external directions link).
+- [x] Verification badge: "Last verified: <date>" + source name, plus "View source" link.
 
 **Mini-phase C — SEO**
-- [ ] Metadata: title, desc, canonical, OG, twitter; JSON-LD: `EducationalOrganization`, `BreadcrumbList`, `Course` (for each), `FAQPage`.
-- [ ] Breadcrumbs rendered (Home / Colleges / State / College).
+- [x] Metadata: title, desc, canonical, OG, twitter; JSON-LD: `CollegeOrUniversity` (= EducationalOrganization), `BreadcrumbList`, `Course` (for each), `FAQPage`. ISR via `export const revalidate = 3600` + cache tags.
+- [x] Breadcrumbs rendered (Home / Colleges / State / College).
 
 **Mini-phase D — CTA + integrity**
-- [ ] Get Admission Assistance (modal/form, prefills college), WhatsApp contextual message ("Hello Padhaanewala, I am interested in BHMS admission at [College Name]"), phone link.
-- [ ] "Information is for guidance; verify with institution" disclaimers; missing-data sections show "Not available in verified database."
+- [x] Get Admission Assistance (form, prefills college, hidden `source=college-detail`), phone link (`tel:`), "Information is for guidance; verify with institution" disclaimers, missing-data sections show "Not available in verified database."
+- [ ] WhatsApp contextual message ("Hello Padhaanewala, I am interested in admission at [College Name]"). — pending
 
 **DoD:** Page passes a print of all structured-data snippets against Schema.org validator; disclaimers present; every section handles missing data.
 
@@ -361,15 +361,16 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 11 — COMPARISON SYSTEM
 
 **Goal:** Multi-college comparison with shareable URLs.
-**Current state:** ⬜ Nothing.
+**Current state:** 🔶 Partial at PROMPT 09 (this session). Compare tray + `/compare` page done client-side (localStorage, capacity 4, live data from the detail API). Backend `POST /api/v1/comparison` and AI "which is better" not started.
 
 **Mini-phase A — Backend comparison API**
 - [ ] `POST /api/v1/comparison` body `{college_ids: [...], course_id?}` → normalized rows (location, type, university, course, duration, fees, hostel, facilities, admission, eligibility, cutoff, rating, reviews count).
 - [ ] Enforce reasonable max (e.g. 4); guard against invented data (only stored fields returned).
 
 **Mini-phase B — Compare tray**
-- [ ] Client-side "Compare" action on all college cards/pages; tray shows selected count; persists in localStorage; capacity enforced.
-- [ ] `/compare?ids=<uuids>` renders responsive comparison table (stacks to cards on mobile).
+- [x] Client-side "Compare" action on college pages (compare-button on detail page; search-result cards expose a local-state compare toggle not yet wired to the tray).
+- [x] Tray shows selected count; persists in localStorage; capacity enforced (4) — `lib/shortlist.ts`.
+- [x] `/compare` renders responsive comparison table (attribute matrix, both column headers + spanned scroll on mobile; stacked mobile card layout pending Phase 43).
 
 **Mini-phase C — "Ask AI: Which college is better for me?"**
 - [ ] Button on compare page → AI comparison (Phase 26) using only verified DB fields; streams response with sources; disclaimer "not an admission guarantee"; missing fields labeled explicitly.
@@ -450,7 +451,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 15 — SAVE COLLEGE
 
 **Goal:** Save/unsave with duplicate prevention + dashboard integration.
-**Current state:** 🔶 StudentSavedCollege model exists; no API/UI.
+**Current state:** 🔶 StudentSavedCollege model exists; auth API/UI still pending. NOTE (PROMPT 09): a client-side "Save College" shortlist (`lib/shortlist.ts` + `save-college-button.tsx`) now works on the college detail page — localStorage-backed, on-device only; the server-backed, per-student version remains this phase.
 
 **Mini-phase A — Backend API**
 - [ ] `POST /api/v1/students/saved-colleges/{college_id}` (upsert, idempotent).
@@ -472,21 +473,21 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 16 — ADMISSION ENQUIRY
 
 **Goal:** Every-page enquiry funnel → CRM, with source/UTM tracking.
-**Current state:** 🔶 Enquiry model exists; no endpoint/UI/AI integration.
+**Current state:** 🔶 Partial at PROMPT 09 (this session). Public `POST /api/v1/enquiries` endpoint implemented (`app/api/v1/endpoints/enquiries.py`, schema, `Enquiry` model extended with mobile/course/preferred_college/state/source/UTM cols) + migration `f2a3b4c5d6e7`, and the college-page admission-assistance form. Remaining: honeypot/rate-limit, duplicate-flag logic, Lead auto-create + audit + worker event, UTM-from-URL + landing-path capture, reuse across every page, tests.
 
 **Mini-phase A — Backend API**
-- [ ] `POST /api/v1/enquiries` — public. Fields: name, mobile, email, course, preferred_college, state, city, qualification, message (+ source, utm_source/medium/campaign/content, landing path, referrer).
-- [ ] Validation: mobile format, email format, anti-bot honeypot + server-side rate limit (per IP + mobile).
+- [x] `POST /api/v1/enquiries` — public. Fields: name, mobile, email, course, preferred_college, state, message (+ source, utm_source/utm_medium/utm_campaign). `city`, `qualification`, `utm_content`, landing path and referrer not yet added.
+- [x] Validation: mobile/email + field-length validation in the Pydantic schema and client form. — honeypot + server-side rate limit pending (Phase 35)
 - [ ] Duplicate handling: same mobile+course within 24h → flag "duplicate" not auto-close; still insert with reason.
-- [ ] Auto-create Lead (status NEW) on insert; audit log; success message fixed: "Thank you. Our counsellor will contact you."
+- [ ] Auto-create Lead (status NEW) on insert; audit log; success message fixed: "Thank you. Our counsellor will contact you." — endpoint returns its own success message; Lead creation is Phase 17
 - [ ] Admin/CRM notification event for workers (Phase 33).
 
 **Mini-phase B — Frontend**
-- [ ] Reusable enquiry modal/form component used on: college page, course page, predictor results, homepage CTA, scholarship page, contact.
-- [ ] Hidden fields for source + UTM from URL; honeypot field; client validation; submit → success state (no internal data shown); error state.
+- [x] Reusable enquiry form component used on college page (prefills `preferred_college`, hidden `source=college-detail`). — not yet reused on course/predictor/homepage/contact pages
+- [x] Client validation; submit → success state (no internal data shown); error state. — UTM-from-URL capture + honeypot field pending
 
 **Mini-phase C — Tests**
-- [ ] valid submit → 201 + lead created; invalid mobile/email → 400; honeypot filled → silently rejected; rate-limit → 429; duplicate within window flagged.
+- [ ] valid submit → 201 + lead created; invalid mobile/email → 400; honeypot filled → silently rejected; rate-limit → 429; duplicate within window flagged. — no Python/DB runtime available this session; suite not written
 
 **DoD:** Enquiry from any page lands in admin lead list with correct source; student never sees internal lead data.
 
@@ -1182,11 +1183,11 @@ Hard gates:
 |-----|--------|-----------|-------|
 | 1 | 01–03 | 🔶 02/03 mostly built | Gap-fix migration + module scaffolding |
 | 2 | 04–05 | 🔶 04 partial, 05 ✅ done (friend) | Auth endpoints live; design system complete at f00209b |
-| 3–4 | 06–08 | 🔶 06 done (uncommitted) | Homepage backend+frontend built, exhaust; build green |
-| 5–6 | 09–10 | ⬜ | SEO-heavy pages |
-| 7 | 11–12 | ⬜ | Compare + scholarships |
+| 3–4 | 06–08 | ✅ 06–08 done (at `f96d8d1`) | Homepage, college DB+admin, and college search all committed |
+| 5–6 | 09–10 | 🔶 09 core done (PROMPT 09) | SEO college detail page + enquiry + compare tray; 10 not started |
+| 7 | 11–12 | 🔶 11 partial (PROMPT 09) | Compare tray + `/compare` done; backend/AI compare pending; 12 ⬜ |
 | 8 | 13–14 | ⬜ | Exams + dashboard |
-| 9 | 15–16 | ⬜ | Save college + enquiry funnel |
+| 9 | 15–16 | 🔶 15 shortlist-UI only; 16 partial (PROMPT 09) | Save = localStorage shortlist; enquiries endpoint + college form live |
 | 10 | 17–18 | ⬜ | CRM + admin shell |
 | 11–12 | 19–20 | ⬜ | CMS + reviews |
 | 13 | 21 | ⬜ | NL search parser |
