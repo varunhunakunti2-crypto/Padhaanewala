@@ -117,7 +117,7 @@ export function CollegeCard({
             variant="primary-sm"
             className="flex-1 text-xs h-8"
           >
-            <a href={`/colleges/${college.slug}`}>View Details</a>
+            <a href={`/college/${college.slug}`}>View Details</a>
           </Button>
           {onCompare && (
             <Button

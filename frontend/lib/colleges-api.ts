@@ -1,4 +1,4 @@
-import { api, buildQuery } from "@/lib/api"
+import { api, buildQuery, type FetchCacheConfig } from "@/lib/api"
 import type {
   College,
   CollegeDetail,
@@ -21,8 +21,8 @@ export const collegesPublicApi = {
     ),
   getBySlug: (slug: string) =>
     api.get<Envelope<College>>(`/colleges/by-slug/${slug}`),
-  detail: (slug: string) =>
-    api.get<Envelope<CollegeDetail>>(`/colleges/detail/${slug}`),
+  detail: (slug: string, config?: FetchCacheConfig) =>
+    api.get<Envelope<CollegeDetail>>(`/colleges/detail/${slug}`, undefined, config),
 }
 
 // Admin college API — RBAC-protected on the backend.

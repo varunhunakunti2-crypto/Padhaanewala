@@ -26,6 +26,18 @@ export class ApiError extends Error {
 
 interface FetchOptions extends RequestInit {
   token?: string
+  next?: { revalidate?: number | false; tags?: string[] }
+}
+
+/**
+ * Server-side cache hints passed to the underlying fetch so Server
+ * Components can opt into ISR (revalidate) / on-demand revalidation (tags)
+ * without turning on caching for every call site.
+ */
+export interface FetchCacheConfig {
+  revalidate?: number | false
+  tags?: string[]
+  cache?: RequestCache
 }
 
 async function fetcher<T>(path: string, options: FetchOptions = {}): Promise<T> {
@@ -63,8 +75,20 @@ async function fetcher<T>(path: string, options: FetchOptions = {}): Promise<T> 
 // ─── Typed Helpers ────────────────────────────────────────────────────────────
 
 export const api = {
-  get<T>(path: string, token?: string): Promise<T> {
-    return fetcher<T>(path, { method: "GET", token })
+  get<T>(
+    path: string,
+    token?: string,
+    config?: FetchCacheConfig
+  ): Promise<T> {
+    return fetcher<T>(path, {
+      method: "GET",
+      token,
+      cache: config?.cache,
+      next:
+        config?.revalidate !== undefined || config?.tags
+          ? { revalidate: config.revalidate, tags: config.tags }
+          : undefined,
+    })
   },
 
   post<T>(path: string, body: unknown, token?: string): Promise<T> {
