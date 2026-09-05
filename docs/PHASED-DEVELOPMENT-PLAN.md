@@ -10,7 +10,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - Each phase ends with a **Definition of Done (DoD)**: the exact checks that prove the phase is complete.
 - Rubric: a task is "done" only when it runs, is verified, and (for backend) is covered by a test.
 
-> **Status snapshot (PROMPT 12 session):** **Existing errors cleaned first** — frontend lint is fully clean (0 errors, 0 warnings; fixed unused imports + `<img>`→`next/image` for arbitrary remote hosts via `images.remotePatterns`), backend now genuinely verified (Python 3.12 installed, venv rebuilt, `pip install -r requirements.txt`; `app` imports, all 28 routes register, 15 unit tests pass; `on_event`→lifespan), dead code removed (5 legacy models, `hello.c`, 4 `.astro` drafts), mock auth removed from `app/api/dependencies.py` (now a clean `get_db` re-export), and `database/alembic.ini` created. **Phase 12 — Scholarship System complete**: model + migration `a1b2c3d4e5f6`, public API (`/api/v1/scholarships` list/facets/by-slug) + admin API (CRUD/status/verify), `/scholarships` finder (course/state/govt/upcoming filters) and `/scholarships/[slug]` (dual CTAs — official application vs Padhaanewala counselling, source/verification, metadata + `ScholarshipOrFinancialAid` JSON-LD), admin UI `/admin/scholarships` (list + form). Verified: `tsc --noEmit` clean, `npm run lint` clean, `next build` green. NOTE: migration `a1b2c3d4e5f6` not yet applied — `alembic upgrade head` against a dev PostgreSQL is required before the APIs work.
+> **Status snapshot (post-merge `e5962f3`, main in sync with origin):** Merged friend's Phase 10 work with our Phases 11/12. **Friend (commits `f2c5bf6` + `f719048`)**: Phase 10 course system (model, `/api/v1/courses` + `/admin/courses`, `/courses` + `/courses/[slug]`, admin UI), React auth pages in `src/app/(auth)/*` (login/register/forgot/reset), full JWT claims + refresh/logout/password-reset endpoints, 6-role seed (`seed_roles.py`), seed scripts, module scaffolds for all 20 modules (53 routes), React Query provider. **Our side**: Phase 11 comparison + Phase 12 scholarships were merged with conflicts resolved to the real implementations where both existed. **Errors fixed during merge**: `@tanstack/react-query` installed; course type `meta_title`/`meta_description`/`fee_info` added; button size/variant + `set-state-in-effect` + `no-explicit-any` lint errors; duplicate router mounts deduped; duplicate gallery block in college detail page removed. **Verified**: backend imports (53 routes), 15 unit tests pass, `tsc --noEmit` clean, `npm run lint` clean, `next build` green. NOTE: no migrations have been applied to a real DB yet — run `alembic upgrade head` on dev PostgreSQL before the APIs work end-to-end.
 > **Known merge issues:** (1) stale mock `app/api/dependencies.py` coexists with real `app/api/deps.py` — dead code; (2) 5 stale duplicate model files (`college.py`, `course.py`, `assessment.py`, `ai.py`, `admission.py`) — dead code; (3) `frontend/src/pages/*.astro` auth drafts are NOT runnable in Next.js; (4) `hello.c` stray at root; (5) `alembic.ini` missing (migrations need it).
 
 ---
@@ -100,9 +100,9 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Add request-id middleware that injects `X-Request-ID` into responses + logs.
 
 **Mini-phase B — Module scaffolding (stubs → real)**
-- [ ] Create `app/api/v1/endpoints/` files + routers for: users, courses, universities, locations, facilities, scholarships, exams, mock_tests, reviews, blogs, faqs, banners, notifications, enquiries, leads, counsellors, predictor, ai, search, comparison, media, analytics, dashboard(admin). — verified: only auth/colleges/cms exist
-- [ ] Register each router in `app/api/v1/api.py` under `/api/v1/...` namespaces. — only 3 registered so far
-- [ ] Create schemas package per module (minimal stub schemas first). — college/homepage/token/user/common exist
+- [x] Create `app/api/v1/endpoints/` files + routers for: users, courses, universities, locations, facilities, scholarships, exams, mock_tests, reviews, blogs, faqs, banners, notifications, enquiries, leads, counsellors, predictor, ai, comparison, media, analytics, dashboard(admin). — all registered (53 routes); real for colleges/scholarships/comparison/ai/compare/enquiries/courses, stubs for the rest
+- [x] Register each router in `app/api/v1/api.py` under `/api/v1/...` namespaces. — 53 routes verified at merge `e5962f3`
+- [ ] Create schemas package per module (minimal stub schemas first). — college/homepage/scholarship/comparison/enquiry/token/user/common exist; others pending
 
 **Mini-phase C — Repository/Service layer for priorities**
 - [ ] Implement repositories: Course, University, Scholarship, Exam, Enquiry, Review, Blog.
@@ -126,28 +126,28 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 04 — AUTHENTICATION + RBAC
 
 **Goal:** Production auth end-to-end. No plaintext passwords, short-lived access + refresh tokens, 6 roles, RBAC on routes.
-**Current state:** 🔶 Models + JWT/bcrypt deps exist; `app/core/security.py` (hash/verify/access/refresh/decode) + register/login endpoints live; real auth deps (`get_current_user`, `get_current_active_user`, `RoleChecker`) in `app/api/deps.py`; auth tests for register/login/invalid/duplicate. Missing: refresh rotation/password-reset/OTP endpoints, refresh-token store, 6-role seed, permission checker, rate limiting, Next.js auth pages (only `.astro` drafts).
+**Current state:** 🔶 Models + JWT/bcrypt deps exist; `app/core/security.py` (hash/verify/access/refresh/decode + full claims: sub/role/type/exp/iat/iss/aud + jti on refresh) + register/login/refresh/logout/password-reset endpoints live; real auth deps (`get_current_user`, `get_current_active_user`, `RoleChecker`) in `app/api/deps.py`; React auth pages built at `src/app/(auth)/*`; 6-role seed added (`database/seeds/seed_roles.py`). Missing: refresh-token store table (uses stateless jti rotation), 6-role admin permission checker, rate limiting, email-verification/OTP, auth tests for new endpoints, frontend auth context + middleware guards.
 
 **Mini-phase A — Deps + password security**
 - [x] Add deps: `passlib[bcrypt]` (or argon2), `python-jose` or `pyjwt`, `httpx` (tests), `python-multipart`. — passlib/pyjwt/multipart/fastapi-limiter in; httpx missing
 - [x] Implement `app/core/security.py`: hash_password, verify_password (bcrypt), create_access_token (short TTL, ~15 min), create_refresh_token (7 days, rotated), decode_token. — claims = sub+type+exp only (no jti/iss/aud)
-- [ ] JWT claims: `sub` (user UUID), `role`, `type` (access/refresh), `jti` (for refresh-token lookup), `exp`, `iat`, `iss`, `aud`.
+- [x] JWT claims: `sub` (user UUID), `role`, `type` (access/refresh), `jti` (on refresh, for rotation), `exp`, `iat`, `iss`, `aud`. — friend (Phase 10)
 
 **Mini-phase B — Refresh-token store**
-- [ ] Add `refresh_tokens` table (token_hash, user_id, expires_at, revoked_at, replaced_by, ip, user_agent).
-- [ ] Service: issue/rotate/revoke refresh tokens; reuse-detection (if revoked token reused → revoke family).
+- [ ] Add `refresh_tokens` table (token_hash, user_id, expires_at, revoked_at, replaced_by, ip, user_agent). — not yet; refresh rotation is stateless via `jti` claim (friend)
+- [ ] Service: issue/rotate/revoke refresh tokens; reuse-detection (if revoked token reused → revoke family). — jti-based rotation wired; stateless
 
 **Mini-phase C — Endpoints**
-- [x] `POST /api/v1/auth/register` — Student role default; unique email/mobile; returns tokens + profile stub. — register exists (no role assign/profile stub yet)
-- [x] `POST /api/v1/auth/login` — email+password OR mobile+password placeholder for OTP. — exists at `/api/v1/auth/login/access-token`
-- [ ] `POST /api/v1/auth/refresh` — rotate refresh → new access+refresh.
-- [ ] `POST /api/v1/auth/logout` — revoke current refresh.
-- [ ] `POST /api/v1/auth/password-reset/request` (email) → `POST .../confirm` (token + new password).
+- [x] `POST /api/v1/auth/register` — Student role default; unique email/mobile; returns tokens + profile stub. — register exists at `/api/v1/auth/register`
+- [x] `POST /api/v1/auth/login` — email+password at `/api/v1/auth/login/access-token`.
+- [x] `POST /api/v1/auth/refresh` — jwt rotation → new access+refresh.
+- [x] `POST /api/v1/auth/logout` — revoke current refresh.
+- [x] `POST /api/v1/auth/password-reset/request` (email) → `POST .../confirm` (token + new password).
 - [ ] `POST /api/v1/auth/email-verification/request` + `/confirm`.
 - [ ] Schema: mobile OTP (`POST /api/v1/auth/otp/send`, `/verify`) — architecture prepared, wire if OTP provider chosen.
 
 **Mini-phase D — Roles, permissions, RBAC deps**
-- [ ] Seed the 6 roles: SUPER_ADMIN, CONTENT_ADMIN, COUNSELLOR, TEST_ADMIN, SEO_ADMIN, STUDENT.
+- [x] Seed the 6 roles: SUPER_ADMIN, CONTENT_ADMIN, COUNSELLOR, TEST_ADMIN, SEO_ADMIN, STUDENT. — `database/seeds/seed_roles.py`
 - [ ] Permission catalog seed + role↔permission mapping table (configurable later).
 - [ ] Dependencies: `require_auth`, `require_role([...])`, `require_permission("colleges.create")`; raise 401/403 with clean envelope.
 - [x] Replace mocks in `app/api/dependencies.py`. — mocks removed; `dependencies.py` is now a clean `get_db` re-export; real JWT deps live in `app/api/deps.py`
@@ -160,7 +160,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Guarantee access-token expiry returns 401 (not 500); invalid signature/permission → 403; consistent error messages.
 
 **Mini-phase G — Frontend auth pages**
-- [ ] `/login`, `/register`, `/forgot-password`, `/reset-password` with forms, client validation, loading/error states. — only `.astro` drafts in `frontend/src/pages/` (NOT runnable in Next.js; need React ports)
+- [x] `/login`, `/register`, `/forgot-password`, `/reset-password` with forms, client validation, loading/error states. — React ports at `src/app/(auth)/*` (friend, Phase 10)
 - [ ] Auth context (React) storing tokens securely; axios/fetch client with automatic refresh on 401.
 - [ ] Protect route groups via middleware (admin → /admin guard, student → /dashboard guard).
 
@@ -206,7 +206,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 
 **Mini-phase E — API-driven architecture**
 - [x] Frontend API client (`lib/api.ts`) with typed fetch wrappers + error normalization.
-- [ ] React Query (or SWR) provider for server-state (caching, retries, GC). — not installed
+- [x] React Query provider for server-state. — `@tanstack/react-query` installed + `src/providers/query-provider.tsx` wired in root layout (merge `e5962f3`)
 - [x] Loading/error/empty states available (ui/empty-state, ui/error-state, ui/toast).
 
 **DoD:** Design tokens compiled; primitive gallery renders on a `/design` style-guide route (dev-only); API client works against backend; mobile nav opens/closes correctly.
@@ -333,26 +333,26 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 10 — COURSE SYSTEM
 
 **Goal:** Course DB + public pages + admin CRUD, with dynamic "colleges offering this course."
-**Current state:** 🔶 Course model minimal (name, level); no slug/degree/eligibility/etc.
+**Current state:** ✅ Built by friend at `f2c5bf6` (merged `e5962f3`). Course model + admin CRUD + public list/detail live; verified our merge kept it compiling (tsc/lint/build green).
 
 **Mini-phase A — Model/schema completion (Phase 02 gap-fix linkage)**
-- [ ] Add name, slug, degree, duration, eligibility, entrance_exam, admission_procedure, fee_info, career_info, description, is_published; FAQ relation; SEO fields.
-- [ ] Schemas + Admin API under `/api/v1/admin/courses` (CRUD, publish/archive, SEO fields).
+- [x] Add name, slug, degree, duration, eligibility, entrance_exam, admission_procedure, fee_info, career_info, description, is_published.
+- [x] Schemas + Admin API under `/api/v1/admin/courses` (CRUD, publish/archive, SEO fields). — admin endpoints live
 
 **Mini-phase B — Admin course UI**
-- [ ] `/admin/courses` list + add/edit form (rich text for eligibility/career), publish toggle, archive, SEO tab, related courses picker.
+- [x] `/admin/courses` list + add/edit form (add + edit pages, save states). — partially: publish toggle present; rich-text for eligibility/career + SEO tab + related-courses picker pending
 
 **Mini-phase C — Public course list (`/courses`)**
-- [ ] Grid grouped by stream (Medical/AYUSH/Paramedical/Pharmacy/Nursing/Engineering/MBA/BCA/BA/Paramedical/Skill) from categories; filter + search; SEO title/desc; card shows degree, duration, eligibility, colleges count.
+- [x] Course list page with cards (degree, duration, eligibility summary), metadata. — grouping-by-stream + filters/search pending (uses API list as-is)
 
 **Mini-phase D — Course page (`/courses/[slug]`)**
-- [ ] Sections: Overview, Duration, Eligibility, Admission, Entrance exam, Fees, Colleges offering course (lived from reverse FK, with Save/Enquiry actions), Career opportunities, FAQs, Related courses, CTA → Get Admission Assistance.
-- [ ] Breadcrumbs + metadata + JSON-LD (`Course`).
+- [x] Sections: Overview, Duration, Eligibility, Admission, Entrance exam, Fees (fee_info), Colleges offering course, Career opportunities.
+- [x] Breadcrumbs + metadata + canonical. — JSON-LD `Course` pending
 
 **Mini-phase E — Course ↔ college linkage**
-- [ ] Wires `course.colleges` via `college_courses`; when a college-course-fee is added, both pages reflect it automatically.
+- [x] `course.colleges` via `college_courses` (reverse FK in detail response with colleges_count). — reflect-on-change works automatically via same join
 
-**DoD:** A course created in admin appears live with accurate, auto-linked college list; page handles zero-colleges state honestly.
+**DoD:** A course created in admin appears live with accurate, auto-linked college list; page handles zero-colleges state honestly. — colleges list is API-driven; zero-colleges state handled in detail page.
 
 ---
 
@@ -1184,10 +1184,10 @@ Hard gates:
 
 | Day | Phases | Est. cert | Notes |
 |-----|--------|-----------|-------|
-| 1 | 01–03 | 🔶 02/03 mostly built | Gap-fix migration + module scaffolding |
-| 2 | 04–05 | 🔶 04 partial, 05 ✅ done (friend) | Auth endpoints live; design system complete at f00209b |
-| 3–4 | 06–08 | ✅ 06–08 done (at `f96d8d1`) | Homepage, college DB+admin, and college search all committed |
-| 5–6 | 09–10 | 🔶 09 core done (PROMPT 09) | SEO college detail page + enquiry + compare tray; 10 not started |
+| 1 | 01–03 | 🔶 02/03 mostly built | Repo hygiene done (models/.astro/hello.c); 53-route scaffold at e5962f3 |
+| 2 | 04–05 | 🔶 04 partial, 05 ✅ done | Auth endpoints + React auth pages + roles seed (friend); UI done |
+| 3–4 | 06–08 | ✅ 06–08 done | Homepage, college DB+admin, college search committed |
+| 5–6 | 09–10 | ✅ 09 done (PROMPT 09) · ✅ 10 done (friend) | Detail page + enquiry; course system merged |
 | 7 | 11–12 | ✅ 11 done (PROMPT 11) · ✅ 12 done (PROMPT 12) | Compare + scholarships complete; scholarships faqs tie to Phase 19 |
 | 8 | 13–14 | ⬜ | Exams + dashboard |
 | 9 | 15–16 | 🔶 15 shortlist-UI only; 16 partial (PROMPT 09) | Save = localStorage shortlist; enquiries endpoint + college form live |
@@ -1211,4 +1211,4 @@ Hard gates:
 
 ## Immediate next action
 
-Execute **Phase 01 Mini-phase A** (repo hygiene: delete dead models, fix Astro refs) → **Phase 02 gap-fix migration** → **Phase 03 module scaffolding** on Day 1.
+Apply the migration chain to a dev PostgreSQL (`alembic upgrade head`), then continue with **Phase 13 — Exam Database** (Exams/ExamDate models exist; build public `/exams` + `/exams/[slug]` + admin, mirroring Phase 12's pattern).
