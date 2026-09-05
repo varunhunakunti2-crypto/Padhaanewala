@@ -1,4 +1,5 @@
 import * as React from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -43,12 +44,14 @@ export function CollegeCard({
       )}
     >
       {/* Cover image placeholder */}
-      <div className="h-36 bg-gradient-to-br from-[var(--color-link-soft)] to-[var(--color-violet-soft)] relative">
+      <div className="h-36 relative bg-gradient-to-br from-[var(--color-link-soft)] to-[var(--color-violet-soft)]">
         {college.coverImage && (
-          <img
+          <Image
             src={college.coverImage}
             alt={college.name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
           />
         )}
         <div className="absolute top-3 right-3 flex gap-2">

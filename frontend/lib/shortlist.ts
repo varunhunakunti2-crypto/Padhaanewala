@@ -11,6 +11,7 @@ const SAVED_KEY = "padhaanewala:saved"
 const COMPARE_KEY = "padhaanewala:compare"
 
 export interface CompareEntry {
+  id?: string
   slug: string
   name: string
 }
@@ -95,11 +96,11 @@ export function getCompareList(): CompareEntry[] {
  * Upsert a college into the compare list. Returns whether it was added
  * (false when already present or the cap was reached).
  */
-export function upsertCompare(slug: string, name: string): boolean {
+export function upsertCompare(id: string, slug: string, name: string): boolean {
   const list = readCompare().filter((e) => e.slug !== slug)
   let added = false
   if (list.length < COMPARE_LIMIT) {
-    list.push({ slug, name })
+    list.push({ id, slug, name })
     added = true
   }
   try {
@@ -110,6 +111,19 @@ export function upsertCompare(slug: string, name: string): boolean {
   compareCache = list
   notify()
   return added
+}
+
+export function addCompareEntry(entry: CompareEntry): void {
+  const list = readCompare().filter((e) => e.slug !== entry.slug)
+  if (list.length >= COMPARE_LIMIT) return
+  list.push(entry)
+  try {
+    window.localStorage.setItem(COMPARE_KEY, JSON.stringify(list))
+  } catch {
+    // ignore
+  }
+  compareCache = list
+  notify()
 }
 
 export function removeCompare(slug: string): CompareEntry[] {

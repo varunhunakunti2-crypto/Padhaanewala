@@ -6,6 +6,12 @@
  * No secrets or keys live here — those are backend-only.
  */
 
+import type {
+  AiCompareResponse,
+  ComparisonPreferences,
+  ComparisonResponse,
+} from "@/types/comparison"
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1"
 
 // ─── Error Types ──────────────────────────────────────────────────────────────
@@ -222,6 +228,20 @@ export const aiApi = {
       body,
       token
     ),
+  compare: (body: { college_ids: string[]; preferences?: ComparisonPreferences }) =>
+    api.post<Envelope<AiCompareResponse>>("/ai/compare", body),
+}
+
+// Comparison
+export const comparisonApi = {
+  compare: (body: { college_ids: string[]; course_id?: string }) =>
+    api.post<Envelope<ComparisonResponse>>("/comparison", body),
+}
+
+interface Envelope<T> {
+  success: boolean
+  message?: string
+  data: T
 }
 
 // Predictor

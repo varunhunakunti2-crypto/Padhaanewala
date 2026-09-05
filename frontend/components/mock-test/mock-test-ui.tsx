@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Clock, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Clock, CheckCircle2, XCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface QuestionNavProps {
@@ -99,7 +99,6 @@ export function TestResultCard({
   total,
   correct,
   incorrect,
-  unattempted,
   timeTaken,
   rank,
 }: ResultCardProps) {

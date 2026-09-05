@@ -6,18 +6,19 @@ import { Button } from "@/components/ui/button"
 import { COMPARE_LIMIT, upsertCompare, useCompareList } from "@/lib/shortlist"
 
 interface CompareButtonProps {
+  collegeId?: string
   slug: string
   name: string
   className?: string
 }
 
-export function CompareButton({ slug, name, className }: CompareButtonProps) {
+export function CompareButton({ collegeId, slug, name, className }: CompareButtonProps) {
   const router = useRouter()
   const compareList = useCompareList()
   const added = compareList.some((e) => e.slug === slug)
 
   const onCompare = () => {
-    upsertCompare(slug, name)
+    upsertCompare(collegeId ?? slug, slug, name)
     router.push("/compare")
   }
 

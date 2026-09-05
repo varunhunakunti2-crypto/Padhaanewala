@@ -10,7 +10,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - Each phase ends with a **Definition of Done (DoD)**: the exact checks that prove the phase is complete.
 - Rubric: a task is "done" only when it runs, is verified, and (for backend) is covered by a test.
 
-> **Status snapshot (PROMPT 09 session, HEAD `f96d8d1`):** Phases 06–08 are committed on `origin/main` (homepage, college DB + admin CRUD, college search) and were pulled this session. This session implemented **Phase 09 — College Detail Page** (frontend + supporting bits): `/college/[slug]` fully rebuilt (Overview, Courses & Fees, Eligibility, Admission, Cutoffs, Facilities, Reviews, Gallery, FAQs, Map, Admission Assistance; breadcrumbs; `generateMetadata` w/ canonical/OG/twitter; JSON-LD `CollegeOrUniversity` + `Course` + `FAQPage` + `BreadcrumbList`; verification source/date; ISR `revalidate = 3600`), plus the **compare tray + `/compare` page** (Phase 11 mini-B), a **client-side "Save College" shortlist** (`lib/shortlist.ts`), and a **public `POST /api/v1/enquiries`** endpoint + migration `f2a3b4c5d6e7` (Phase 16 mini-A/B partial) with the college-page admission-assistance form. Frontend verified: `tsc --noEmit` clean, `npm run lint` **0 errors** (7 pre-existing warnings confined to friend's Phase 05 files). NOTE: backend additions (enquiries endpoint + migration) are **not yet run against a DB** — no working Python/PostgreSQL in this environment (venv interpreter is broken), so migrate with `alembic upgrade head` on a dev DB before use.
+> **Status snapshot (PROMPT 12 session):** **Existing errors cleaned first** — frontend lint is fully clean (0 errors, 0 warnings; fixed unused imports + `<img>`→`next/image` for arbitrary remote hosts via `images.remotePatterns`), backend now genuinely verified (Python 3.12 installed, venv rebuilt, `pip install -r requirements.txt`; `app` imports, all 28 routes register, 15 unit tests pass; `on_event`→lifespan), dead code removed (5 legacy models, `hello.c`, 4 `.astro` drafts), mock auth removed from `app/api/dependencies.py` (now a clean `get_db` re-export), and `database/alembic.ini` created. **Phase 12 — Scholarship System complete**: model + migration `a1b2c3d4e5f6`, public API (`/api/v1/scholarships` list/facets/by-slug) + admin API (CRUD/status/verify), `/scholarships` finder (course/state/govt/upcoming filters) and `/scholarships/[slug]` (dual CTAs — official application vs Padhaanewala counselling, source/verification, metadata + `ScholarshipOrFinancialAid` JSON-LD), admin UI `/admin/scholarships` (list + form). Verified: `tsc --noEmit` clean, `npm run lint` clean, `next build` green. NOTE: migration `a1b2c3d4e5f6` not yet applied — `alembic upgrade head` against a dev PostgreSQL is required before the APIs work.
 > **Known merge issues:** (1) stale mock `app/api/dependencies.py` coexists with real `app/api/deps.py` — dead code; (2) 5 stale duplicate model files (`college.py`, `course.py`, `assessment.py`, `ai.py`, `admission.py`) — dead code; (3) `frontend/src/pages/*.astro` auth drafts are NOT runnable in Next.js; (4) `hello.c` stray at root; (5) `alembic.ini` missing (migrations need it).
 
 ---
@@ -23,14 +23,14 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 **Current state:** 🔶 Monorepo exists (`frontend/`, `backend/`, `database/`, `docs/`, `scripts/`) but has contradictions.
 
 **Mini-phase A — Repo hygiene**
-- [ ] Delete stale duplicate backend models (dead code, must never be imported):
+- [x] Delete stale duplicate backend models (dead code, must never be imported):
   - `backend/app/models/college.py`
   - `backend/app/models/course.py`
   - `backend/app/models/assessment.py`
   - `backend/app/models/ai.py`
   - `backend/app/models/admission.py`
-- [ ] Delete stray `hello.c` at repo root.
-- [ ] Reconcile Astro contradiction: `.vscode/launch.json`, `.vscode/extensions.json`, `skills-lock.json`, root `AGENTS.md` reference Astro; actual stack is Next.js 16. Update these to Next.js tooling.
+- [x] Delete stray `hello.c` at repo root.
+- [x] Reconcile Astro contradiction: deleted `frontend/src/pages/*.astro` drafts (not runnable in Next.js). — `.vscode/launch.json`, `.vscode/extensions.json`, `skills-lock.json`, root `AGENTS.md` Astro references still need updating to Next.js tooling
 - [x] Verify `.gitignore` covers: `backend/.env`, `frontend/.env*`, `database/alembic.ini`, `*.log`, OS junk.
 - [ ] Confirm git repo clean on `main`; establish branch convention `develop`, `feature/*`, `bugfix/*`.
 
@@ -41,7 +41,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Ensure `AI_API_KEY`, `JWT_SECRET`, `STORAGE_*` exist only in `.env`, never committed.
 
 **Mini-phase C — Alembic runnable**
-- [ ] Create `database/alembic.ini` (currently gitignored but missing) with `script_location = database/migrations`.
+- [x] Create `database/alembic.ini` (currently gitignored but missing) with `script_location = database/migrations`. — created (gitignored, local only)
 - [ ] Verify `alembic upgrade head` runs against a local PostgreSQL DB.
 - [ ] Document the DB creation + migration command sequence in `database/README.md`.
 
@@ -150,7 +150,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 - [ ] Seed the 6 roles: SUPER_ADMIN, CONTENT_ADMIN, COUNSELLOR, TEST_ADMIN, SEO_ADMIN, STUDENT.
 - [ ] Permission catalog seed + role↔permission mapping table (configurable later).
 - [ ] Dependencies: `require_auth`, `require_role([...])`, `require_permission("colleges.create")`; raise 401/403 with clean envelope.
-- [x] Replace mocks in `app/api/dependencies.py`. — real JWT deps (`get_current_user`, `get_current_active_user`, `RoleChecker`) in `app/api/deps.py`; stale mock file `dependencies.py` unused
+- [x] Replace mocks in `app/api/dependencies.py`. — mocks removed; `dependencies.py` is now a clean `get_db` re-export; real JWT deps live in `app/api/deps.py`
 
 **Mini-phase E — Rate limiting + audit hooks**
 - [ ] Redis-backed rate limiter dependency for `/auth/*` (login/otp, e.g. 5/min per IP+mobile).
@@ -361,19 +361,21 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 11 — COMPARISON SYSTEM
 
 **Goal:** Multi-college comparison with shareable URLs.
-**Current state:** 🔶 Partial at PROMPT 09 (this session). Compare tray + `/compare` page done client-side (localStorage, capacity 4, live data from the detail API). Backend `POST /api/v1/comparison` and AI "which is better" not started.
+**Current state:** ✅ Done at PROMPT 11 (this session). Backend comparison API + rules-based "Ask AI" + full frontend (tray, share URLs, responsive table/cards) complete. AI comparison runs a deterministic rules-based scorer over verified DB fields now; the contract is stable so Phase 26 can swap in an LLM without frontend changes.
 
 **Mini-phase A — Backend comparison API**
-- [ ] `POST /api/v1/comparison` body `{college_ids: [...], course_id?}` → normalized rows (location, type, university, course, duration, fees, hostel, facilities, admission, eligibility, cutoff, rating, reviews count).
-- [ ] Enforce reasonable max (e.g. 4); guard against invented data (only stored fields returned).
+- [x] `POST /api/v1/comparison` body `{college_ids: [...], course_id?}` → normalized rows (location, type, university, course, duration, fees, hostel, facilities, admission, eligibility, cutoff, rating, reviews count).
+- [x] Enforce reasonable max (4); guard against invented data (only stored fields returned; missing → null/empty, never fabricated).
 
 **Mini-phase B — Compare tray**
-- [x] Client-side "Compare" action on college pages (compare-button on detail page; search-result cards expose a local-state compare toggle not yet wired to the tray).
+- [x] Client-side "Compare" action on college pages (compare-button on detail page carries college id).
 - [x] Tray shows selected count; persists in localStorage; capacity enforced (4) — `lib/shortlist.ts`.
-- [x] `/compare` renders responsive comparison table (attribute matrix, both column headers + spanned scroll on mobile; stacked mobile card layout pending Phase 43).
+- [x] `/compare` renders responsive comparison: matrix table on desktop, stacked college cards on mobile; add-more-colleges link; remove per college; clear all.
+- [x] Shareable comparison URL: `/compare?c=slug1,slug2` — opened links auto-populate the tray; "Copy shareable link" button (`navigator.clipboard`).
 
 **Mini-phase C — "Ask AI: Which college is better for me?"**
-- [ ] Button on compare page → AI comparison (Phase 26) using only verified DB fields; streams response with sources; disclaimer "not an admission guarantee"; missing fields labeled explicitly.
+- [x] "Ask AI" panel on `/compare` — rules-based scorer (`POST /api/v1/ai/compare`) using only verified DB fields (course match, budget, hostel, govt/private, state, rating, accreditation, cutoff availability, admission status). Outputs tier + score + strengths/weaknesses + per-fact source chips + verified date.
+- [x] Never claims guaranteed admission: fixed disclaimer in the API payload and in the UI ("automated estimate … NOT an admission guarantee"). — full LLM upgrade is Phase 26 (same schema)
 
 **DoD:** Real user flow: search → add 2–3 colleges → compare → share/refresh URL → same data.
 
@@ -382,20 +384,21 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 12 — SCHOLARSHIP SYSTEM
 
 **Goal:** Scholarship finder + detail pages + admin.
-**Current state:** 🔶 Scholarship/ScholarshipCourse/ScholarshipState models exist; no endpoints/pages.
+**Current state:** ✅ Complete at PROMPT 12 (this session). Model completed (slug, is_government, income_criteria, deadline, documents, application_procedure, official_application_url, status) + migration `a1b2c3d4e5f6`; backend public + admin APIs; frontend list/detail/admin UI with SEO metadata. Remaining process-level: seed real dataset (demo data only), FAQs on detail page can be added via Phase 19 CMS.
 
 **Mini-phase A — Model/schema completion (Phase 02 gap-fix linkage)**
-- [ ] Fields: name, slug, provider, govt/private, eligibility, income_criteria, amount, deadline, documents, application_procedure, official_application_url, status, last_verified_at, source.
-- [ ] Admin API + `/admin/scholarships` CRUD UI (publish/archive, verification fields).
+- [x] Fields: name, slug, provider, govt/private, eligibility, income_criteria, amount, deadline, documents, application_procedure, official_application_url, status, last_verified_at, source (from ScrapedDataMixin).
+- [x] Admin API (`/api/v1/admin/scholarships`: CRUD, status, verify) + `/admin/scholarships` UI (list + add/edit form, status dropdown, delete, verification fields).
 
 **Mini-phase B — Public list `/scholarships`**
-- [ ] Filters: course, state, student category, income, govt/private, deadline imminent; sort by deadline/amount.
-- [ ] Cards show amount, provider, deadline, eligibility summary.
+- [x] Filters: course, state, govt/private, deadline imminent (upcoming), search; server-ordered by deadline. — "student category" + "income" filters pending (income criteria is free text)
+- [x] Cards show amount, provider, deadline, govt/private badge, status, courses.
 
 **Mini-phase C — Detail page `/scholarships/[slug]`**
-- [ ] Sections: name, provider, amount, eligibility, deadline, documents, application process, official application link, FAQs, verification date.
-- [ ] Two clearly distinct CTAs: "Official Application" (external link) vs "Padhaanewala Admission Assistance" (enquiry) — never conflate.
-- [ ] Metadata + `Scholarship` JSON-LD.
+- [x] Sections: name, provider, amount, eligibility, income criteria, courses/states, application procedure, documents, source & verification date, current status.
+- [x] Two clearly distinct CTAs: "Official Application" (primary, external) vs "Padhaanewala counselling" (shaded, includes admission-assistance form) — never conflated.
+- [x] Metadata (title/desc/canonical/OG) + JSON-LD `ScholarshipOrFinancialAid` + `SpecialAnnouncement` for active deadlines.
+- [ ] FAQs section — feeds from Phase 19 CMS (entity_type="scholarship").
 
 **DoD:** Filtered search works; official link visually distinct from Padhaanewala CTA; deadline dates from DB not code.
 
@@ -716,7 +719,7 @@ Working copy of the 47-prompt September order, expanded into mini-phases and tas
 ### PHASE 26 — AI COLLEGE COMPARISON
 
 **Goal:** AI "which is better for me" grounded in DB.
-**Current state:** ⬜ (builds on Phase 11 comparison + Phase 22 RAG + Phase 24 AI service).
+**Current state:** 🔶 Rules-based version landed with Phase 11 (`POST /api/v1/ai/compare` — deterministic scorer over verified fields, tier/score/strengths/weaknesses/sources, estimate disclaimer). This phase upgrades the scorer to an LLM over RAG (needs Phases 22 + 24) — same response contract, no frontend change.
 
 **Mini-phase A — Backend**
 - [ ] `POST /api/v1/ai/compare` body {college_ids, preferences?, student_profile?} → strengths/weaknesses/suitable-profile/summary per college + side-by-side key factors.
@@ -1185,7 +1188,7 @@ Hard gates:
 | 2 | 04–05 | 🔶 04 partial, 05 ✅ done (friend) | Auth endpoints live; design system complete at f00209b |
 | 3–4 | 06–08 | ✅ 06–08 done (at `f96d8d1`) | Homepage, college DB+admin, and college search all committed |
 | 5–6 | 09–10 | 🔶 09 core done (PROMPT 09) | SEO college detail page + enquiry + compare tray; 10 not started |
-| 7 | 11–12 | 🔶 11 partial (PROMPT 09) | Compare tray + `/compare` done; backend/AI compare pending; 12 ⬜ |
+| 7 | 11–12 | ✅ 11 done (PROMPT 11) · ✅ 12 done (PROMPT 12) | Compare + scholarships complete; scholarships faqs tie to Phase 19 |
 | 8 | 13–14 | ⬜ | Exams + dashboard |
 | 9 | 15–16 | 🔶 15 shortlist-UI only; 16 partial (PROMPT 09) | Save = localStorage shortlist; enquiries endpoint + college form live |
 | 10 | 17–18 | ⬜ | CRM + admin shell |

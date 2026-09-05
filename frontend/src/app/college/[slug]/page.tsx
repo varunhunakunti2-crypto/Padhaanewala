@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import {
   MapPin,
@@ -32,7 +33,7 @@ interface PageProps {
 const SITE = "https://padhaanewala.in"
 const REVALIDATE_SECONDS = 3600
 
-export const revalidate = REVALIDATE_SECONDS
+export const revalidate = 3600
 
 function buildDescription(d: CollegeDetail): string {
   const type = d.college_type ?? "college"
@@ -393,7 +394,7 @@ export default async function CollegeDetailPage({ params }: PageProps) {
                 </a>
               </Button>
             ) : null}
-            <CompareButton slug={data.slug} name={data.name} />
+            <CompareButton collegeId={data.id} slug={data.slug} name={data.name} />
             <SaveCollegeButton slug={data.slug} name={data.name} />
           </div>
         </div>
@@ -680,14 +681,15 @@ export default async function CollegeDetailPage({ params }: PageProps) {
                     href={g.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block aspect-[4/3] overflow-hidden rounded-md border border-hairline bg-canvas-elevated"
+                    className="group relative block aspect-[4/3] overflow-hidden rounded-md border border-hairline bg-canvas-elevated"
                   >
-                    <img
+                    <Image
                       src={g.url}
                       alt={g.alt_text ?? `${data.name} photo ${i + 1}`}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
-                      decoding="async"
                     />
                   </a>
                 ))}
