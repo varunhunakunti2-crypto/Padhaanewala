@@ -1,6 +1,7 @@
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -8,6 +9,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, User as UserSchema
 from app.schemas.token import Token
+from app.schemas.common import ResponseModel
 from app.core import security
 
 from app.services.auth_service import AuthService
@@ -47,3 +49,47 @@ async def login_access_token(
         "refresh_token": refresh_token,
         "token_type": "bearer",
     }
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(
+    data: RefreshRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
+    # Stub: Delegate to AuthService for validation and issuance
+    return {
+        "access_token": "new_access_token_stub",
+        "refresh_token": "new_refresh_token_stub",
+        "token_type": "bearer",
+    }
+
+@router.post("/logout", response_model=ResponseModel)
+async def logout(
+    data: RefreshRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
+    # Stub: Delegate to AuthService to revoke token
+    return {"success": True, "message": "Successfully logged out", "data": None}
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+@router.post("/password-reset/request", response_model=ResponseModel)
+async def password_reset_request(
+    data: PasswordResetRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
+    return {"success": True, "message": "Password reset email sent", "data": None}
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+@router.post("/password-reset/confirm", response_model=ResponseModel)
+async def password_reset_confirm(
+    data: PasswordResetConfirm,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
+    return {"success": True, "message": "Password successfully reset", "data": None}

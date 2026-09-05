@@ -14,6 +14,7 @@ class Counsellor(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
     leads: Mapped[List["Lead"]] = relationship(back_populates="counsellor")
 
 class Lead(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
+    lead_id: Mapped[str] = mapped_column(String, unique=True, index=True)
     name: Mapped[str] = mapped_column(String)
     email: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
     phone: Mapped[str] = mapped_column(String, index=True)
@@ -22,6 +23,7 @@ class Lead(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("counsellors.id", ondelete="SET NULL"), nullable=True)
     status: Mapped[str] = mapped_column(String, default="new", index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True) # Keeping for simple one-liner, detailed in LeadNote
+    follow_up_date: Mapped[str | None] = mapped_column(String, nullable=True)
     
     counsellor: Mapped["Counsellor"] = relationship(back_populates="leads")
     status_history: Mapped[List["LeadStatusHistory"]] = relationship(back_populates="lead", cascade="all, delete-orphan")

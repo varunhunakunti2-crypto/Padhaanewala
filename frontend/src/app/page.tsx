@@ -15,7 +15,6 @@ import { WhyUs } from "@/components/home/why-us";
 import { Reviews } from "@/components/home/reviews";
 import { Articles } from "@/components/home/articles";
 import { AdmissionCTA } from "@/components/home/admission-cta";
-import { HomepageError } from "@/components/home/homepage-error";
 
 export const dynamic = "force-dynamic";
 
@@ -69,8 +68,7 @@ export default async function Home() {
     const res = await api.get<{ success: boolean; data: HomepageResponse }>("/cms/homepage");
     data = res.data;
   } catch (err) {
-    console.error("[homepage] failed to load:", err);
-    return <HomepageError />;
+    console.warn("[homepage] API unavailable, using fallback content:", err);
   }
 
   // Never show a broken page: if the API responds but drops a section, fall

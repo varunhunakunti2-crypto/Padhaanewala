@@ -1,14 +1,21 @@
 from typing import List
 import uuid
-from sqlalchemy import String, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import String, ForeignKey, Integer, UniqueConstraint, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin
 
 class Exam(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, Base):
     name: Mapped[str] = mapped_column(String, index=True)
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True)
     full_name: Mapped[str | None] = mapped_column(String, nullable=True)
     level: Mapped[str | None] = mapped_column(String, nullable=True) # e.g., National, State
+    conducting_authority: Mapped[str | None] = mapped_column(String, nullable=True)
+    eligibility: Mapped[str | None] = mapped_column(Text, nullable=True)
+    official_website: Mapped[str | None] = mapped_column(String, nullable=True)
+    official_notification_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     
     dates: Mapped[List["ExamDate"]] = relationship(back_populates="exam")
 

@@ -1,6 +1,6 @@
 from typing import List
 import uuid
-from sqlalchemy import String, ForeignKey, Integer, Text, Boolean, JSON
+from sqlalchemy import String, ForeignKey, Integer, Float, Text, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin
@@ -27,6 +27,8 @@ class Question(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
     question_type: Mapped[str] = mapped_column(String) # MCQ, subjective
     correct_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
     marks: Mapped[int] = mapped_column(Integer, default=1)
+    negative_marks: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source: Mapped[str | None] = mapped_column(String, nullable=True)
 
 class QuestionOption(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "question_options"

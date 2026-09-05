@@ -19,7 +19,7 @@ async def check_db():
             print(f"Found {len(tables)} tables in the database.")
             
             # check a few specific new tables
-            expected_tables = ["student_saved_colleges", "review_moderation", "test_sections", "categories", "lead_notes"]
+            expected_tables = ["student_saved_colleges", "review_moderation", "test_sections", "categories", "lead_notes", "fees"]
             missing = [t for t in expected_tables if t not in tables]
             if missing:
                 print(f"ERROR: Missing expected tables: {missing}")
