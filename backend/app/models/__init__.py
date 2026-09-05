@@ -10,6 +10,7 @@ from .mock_tests import Test, TestSection, Question, QuestionOption, TestAttempt
 from .content import Post, Category, PostCategory, FAQ, Banner, HomepageContent, SEOMetadata
 from .crm import Counsellor, Lead, LeadStatusHistory, LeadNote, LeadFollowup, Enquiry
 from .rag import DocumentEmbedding
+from .auth import RefreshToken
 
 __all__ = [
     "Base",
@@ -23,5 +24,6 @@ __all__ = [
     "Test", "TestSection", "Question", "QuestionOption", "TestAttempt", "TestAnswer", "TestResult",
     "Post", "Category", "PostCategory", "FAQ", "Banner", "HomepageContent", "SEOMetadata",
     "Counsellor", "Lead", "LeadStatusHistory", "LeadNote", "LeadFollowup", "Enquiry",
-    "DocumentEmbedding"
+    "DocumentEmbedding",
+    "RefreshToken"
 ]

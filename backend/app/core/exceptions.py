@@ -11,12 +11,12 @@ async def app_error_handler(request: Request, exc: AppError):
     logger.error(f"AppError: {exc.message} (status: {exc.status_code})")
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.message},
+        content={"success": False, "message": exc.message, "data": None},
     )
 
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled Exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Something went wrong. Please try again."},
+        content={"success": False, "message": "Something went wrong. Please try again.", "data": None},
     )

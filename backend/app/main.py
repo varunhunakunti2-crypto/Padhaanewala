@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.core.exceptions import AppError, app_error_handler, global_exception_handler
 from app.api.v1.api import api_router
 from app.core.logging import logger
+from app.core.middleware import RequestIdMiddleware
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -21,6 +22,8 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+app.add_middleware(RequestIdMiddleware)
 
 # Exception Handlers
 app.add_exception_handler(AppError, app_error_handler)

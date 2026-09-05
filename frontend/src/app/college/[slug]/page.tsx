@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import {
   MapPin,
@@ -247,12 +248,14 @@ export default async function CollegeDetailPage({ params }: PageProps) {
                     rel="noopener noreferrer"
                     className="group overflow-hidden rounded-md border border-hairline bg-canvas-elevated"
                   >
-                    <img
-                      src={g.url}
-                      alt={g.alt_text ?? `${data.name} photo ${i + 1}`}
-                      className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                    <div className="relative h-40 w-full">
+                      <Image
+                        src={g.url}
+                        alt={g.alt_text ?? `${data.name} photo ${i + 1}`}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
                   </a>
                 ))}
               </div>

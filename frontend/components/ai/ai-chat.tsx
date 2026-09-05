@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Bot, User, Loader2, ShieldAlert } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+
 
 interface ChatMessage {
   id: string

@@ -47,16 +47,48 @@ class College(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, Base
 
 class Course(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, Base):
     name: Mapped[str] = mapped_column(String, index=True)
-    level: Mapped[str | None] = mapped_column(String) # e.g., UG, PG
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True)
+    level: Mapped[str | None] = mapped_column(String, nullable=True) # e.g., UG, PG
+    degree: Mapped[str | None] = mapped_column(String, nullable=True)
+    duration_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    eligibility: Mapped[str | None] = mapped_column(Text, nullable=True)
+    entrance_exam: Mapped[str | None] = mapped_column(String, nullable=True)
+    admission_procedure: Mapped[str | None] = mapped_column(Text, nullable=True)
+    career_info: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fee_info: Mapped[str | None] = mapped_column(Text, nullable=True)
+    meta_title: Mapped[str | None] = mapped_column(String, nullable=True)
+    meta_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     
     colleges: Mapped[List["College"]] = relationship(secondary="college_courses", back_populates="courses")
 
 class CollegeCourse(TimestampMixin, ScrapedDataMixin, Base):
     college_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("colleges.id", ondelete="CASCADE"), primary_key=True)
     course_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), primary_key=True)
-    fees: Mapped[float | None] = mapped_column(Float, nullable=True)
     duration_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
     intake: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+class Fee(UUIDMixin, TimestampMixin, Base):
+    college_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("colleges.id", ondelete="CASCADE"))
+    course_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"))
+    
+    tuition_fee: Mapped[float | None] = mapped_column(Float, nullable=True)
+    hostel_fee: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exam_fee: Mapped[float | None] = mapped_column(Float, nullable=True)
+    other_fee: Mapped[float | None] = mapped_column(Float, nullable=True)
+    total_fee: Mapped[float | None] = mapped_column(Float, nullable=True)
+    period: Mapped[str | None] = mapped_column(String, nullable=True) # e.g., Yearly, Semester
+    is_approximate: Mapped[bool] = mapped_column(Boolean, default=True)
+    disclaimer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['college_id', 'course_id'],
+            ['college_courses.college_id', 'college_courses.course_id'],
+            ondelete="CASCADE"
+        ),
+    )
 
 class Facility(UUIDMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String, unique=True, index=True)

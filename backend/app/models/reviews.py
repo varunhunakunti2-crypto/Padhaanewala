@@ -13,6 +13,7 @@ class Review(UUIDMixin, TimestampMixin, SoftDeleteMixin, ScrapedDataMixin, Base)
     title: Mapped[str | None] = mapped_column(String, nullable=True)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String, default="pending") # pending, approved, rejected
+    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     __table_args__ = (
         CheckConstraint('rating >= 1 AND rating <= 5', name='check_rating_range'),
